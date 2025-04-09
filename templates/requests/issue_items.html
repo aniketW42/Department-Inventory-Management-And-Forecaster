@@ -1,0 +1,22 @@
+<h2>Approved Requests to Issue</h2>
+<table>
+  <tr>
+    <th>Item</th>
+    <th>Quantity</th>
+    <th>Requested By</th>
+    <th>Action</th>
+  </tr>
+  {% for req in approved_requests %}
+  <tr>
+    <td>{{ req.item.name }}</td>
+    <td>{{ req.quantity }}</td>
+    <td>{{ req.user.username }}</td>
+    <td>
+      <form method="post" action="{% url 'mark_as_issued' req.id %}">
+        {% csrf_token %}
+        <button type="submit">Mark as Issued</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>

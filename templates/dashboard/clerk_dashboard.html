@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Clerk Dashboard{% endblock %}
+{% block content %}
+<h2 class="mb-4">Clerk Dashboard</h2>
+
+<div class="row">
+  <div class="col-md-3">
+    <div class="card text-white bg-primary mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Total Items</h5>
+        <p class="card-text fs-4">{{ total_items }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-warning mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Low Stock</h5>
+        <p class="card-text fs-4">{{ low_stock }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-info mb-3">
+      <div class="card-body">
+        <h5 class="card-title">My Pending Requests</h5>
+        <p class="card-text fs-4">{{ pending_requests }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-success mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Issued Items</h5>
+        <p class="card-text fs-4">{{ issued_items }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h4>Recent Requests</h4>
+<ul class="list-group">
+  {% for request in recent_requests %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      {{ request.item.name }} ({{ request.quantity }})
+      <span class="badge bg-secondary">{{ request.status|capfirst }}</span>
+    </li>
+  {% empty %}
+    <li class="list-group-item">No recent requests.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

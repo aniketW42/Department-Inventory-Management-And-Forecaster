@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}View Requests{% endblock %}
+
+{% block content %}
+<h2>Item Requests</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Reason</th>
+            <th>Requested By</th>
+            <th>Status</th>
+            <th>Processed By</th>
+            <th>Request Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for req in requests %}
+        <tr>
+            <td>{{ req.item.name }}</td>
+            <td>{{ req.quantity }}</td>
+            <td>{{ req.reason }}</td>
+            <td>{{ req.user.username }}</td>
+            <td>
+                <span class="badge bg-{% if req.status == 'Approved' %}success{% elif req.status == 'rejected' %}danger{% else %}secondary{% endif %}">
+                    {{ req.status }}
+                </span>
+            </td>
+            <td>
+                {% if req.processed_by %}
+                    {{ req.processed_by.username }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+            <td>{{ req.request_date }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

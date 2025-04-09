@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Manage Item Requests{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Item Requests</h2>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-primary">
+        <tr>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Reason</th>
+            <th>Requested By</th>
+            <th>Status</th>
+            <th>Requested At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for req in requests %}
+        <tr>
+            <td>{{ req.item.name }}</td>
+            <td>{{ req.quantity }}</td>
+            <td>{{ req.reason }}</td>
+            <td>{{ req.user.username }}</td>
+            <td><span class="badge bg-{% if req.status == 'Approved' %}success{% elif req.status == 'Rejected' %}danger{% else %}secondary{% endif %}">{{ req.status }}</span></td>
+            <td>{{ req.request_date }}</td>
+            <td>
+                {% if req.status == 'Pending' %}
+                <form method="post" action="{% url 'process_request' req.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button name="action" value="approve" class="btn btn-sm btn-success">Approve</button>
+                    <button name="action" value="reject" class="btn btn-sm btn-danger">Reject</button>
+                </form>
+                {% else %}
+                <em>No action needed</em>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
