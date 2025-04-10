@@ -5,7 +5,7 @@
 {% block content %}
 {% load status_filters %}
 <div class="container">
-    <h2 class="mb-4">My Request History</h2>
+    <h2 class="mb-4">Request History</h2>
 
     {% if requests %}
         <div class="table-responsive">
@@ -44,7 +44,9 @@
                                 <td>-</td>
                             {% endif %}
                             
-                            <td>{{ req.reason|default:"—" }}</td>
+                            <td style="max-width: 300px; white-space: normal; word-break: break-word;">
+                                {{ req.reason|default:"—" }}
+                            </td>
                             {% if not user.is_faculty %}
                             <td>{{ req.user.username }}</td>
                             {% endif %}

@@ -2,7 +2,7 @@ from django.urls import path, include
 from .views import *
 urlpatterns = [
     path('', home, name='home'),
-    path('request-item/<int:item_id>/', request_item, name='request_item'),
+    # path('request-item/<int:item_id>/', request_item, name='request_item'),
 
     path('faculty/dashboard/', faculty_dashboard, name='faculty_dashboard'),
     path('clerk-dashboard/', clerk_dashboard, name='clerk_dashboard'),
@@ -20,5 +20,6 @@ urlpatterns = [
     path('items/edit/<int:pk>/', edit_item, name='edit_item'),
     path('delete-item/<int:pk>/', delete_item, name='delete_item'),
     path('predict-usage/<int:year>', predict_usage, name='predict_usage'),
-
+    path('request-item/', request_item_page, name='request_item'),
+    path('submit-request/', submit_item_request, name='request_item_submit'),
 ]

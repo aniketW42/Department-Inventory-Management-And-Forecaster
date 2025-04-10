@@ -1,4 +1,88 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Request Inventory Item</h2>
+    <input type="text" class="form-control my-3" placeholder="Search items..." id="searchInput">
+
+    <table class="table table-hover" id="itemsTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Quantity Available</th>
+                <th>Category</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.category }}</td>
+                <td>
+                    {% if item.quantity > 0 %}
+                    <button class="btn btn-sm btn-primary" onclick="openRequestModal({{ item.id }}, '{{ item.name }}', {{ item.quantity }})">
+                        Request
+                    </button>
+                    {% else %}
+                    <span class="badge bg-secondary">Out of stock</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Request Modal -->
+<div class="modal fade" id="requestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" action="{% url 'request_item_submit' %}">
+            {% csrf_token %}
+            <input type="hidden" id="modalItemId" name="item_id">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Request Item: <span id="modalItemName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Available Quantity: <span id="modalItemQty"></span></p>
+                    <div class="mb-3">
+                        <label>Quantity to Request</label>
+                        <input type="number" class="form-control" name="quantity" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Reason</label>
+                        <textarea class="form-control" name="reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" type="submit">Submit Request</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openRequestModal(id, name, qty) {
+    document.getElementById('modalItemId').value = id;
+    document.getElementById('modalItemName').textContent = name;
+    document.getElementById('modalItemQty').textContent = qty;
+    new bootstrap.Modal(document.getElementById('requestModal')).show();
+}
+
+document.getElementById('searchInput').addEventListener('keyup', function () {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
+        const name = row.cells[0].textContent.toLowerCase();
+        row.style.display = name.includes(query) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}
+{% comment %} {% extends 'base.html' %}
 
 {% block content %}
 <h3>Request Item: {{ item.name }}</h3>
@@ -8,4 +92,4 @@
     <button type="submit" class="btn btn-primary">Submit Request</button>
     <a href="{% url 'faculty_dashboard' %}" class="btn btn-secondary">Cancel</a>
 </form>
-{% endblock %}
+{% endblock %} {% endcomment %}

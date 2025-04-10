@@ -3,51 +3,99 @@
 {% block title %}Faculty Dashboard{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Welcome {{ user.get_full_name|default:user.username }}</h2>
+<div class="faculty-dashboard py-4">
+    <h2 class="mb-4 fw-bold" style="color: #343a40;">Welcome {{ user.get_full_name|default:user.username }}</h2>
 
-<div class="mb-4">
-    <h4>Available Inventory</h4>
-    <ul class="list-group">
-        {% for item in items %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ item.name }} ({{ item.available_quantity }} available)
-            <a href="{% url 'request_item' item.id %}" class="btn btn-sm btn-outline-primary">Request</a>
-        </li>
-        {% empty %}
-        <li class="list-group-item">No items available.</li>
-        {% endfor %}
-    </ul>
+    <div class="mb-5">
+        <h4 class="mb-3 fw-bold" style="color: #343a40;">Available Inventory</h4>
+        <a href="{% url "request_item" %}"> Request Item </a>
+    </div>
+
+    <div>
+        <h4 class="mb-3 fw-bold" style="color: #343a40;">My Requests</h4>
+        <div class="table-responsive">
+            <table class="table table-hover shadow-sm" style="background: #f8f9fa;">
+                <thead style="background: #e9ecef; color: #343a40;">
+                    <tr>
+                        <th scope="col">Item</th>
+                        <th scope="col">Quantity</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Requested On</th>
+                        <th scope="col">Decision</th>
+                    </tr>
+                </thead>
+                <tbody style="color: #343a40;">
+                    {% for req in my_requests %}
+                    <tr>
+                        <td>{{ req.item.name }}</td>
+                        <td>{{ req.quantity }}</td>
+                        <td>
+                            <span class="badge rounded-pill px-3 py-2" style="{% if req.status == 'pending' %}background-color: #ffc107; color: #343a40;{% elif req.status == 'approved' %}background-color: #28a745; color: white;{% else %}background-color: #dc3545; color: white;{% endif %}">
+                                {{ req.status|capfirst }}
+                            </span>
+                        </td>
+                        <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
+                        <td>{{ req.decision_date|default:"--" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4" style="color: #6c757d;">No requests made yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-<div>
-    <h4>My Requests</h4>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th>Quantity</th>
-                <th>Status</th>
-                <th>Requested On</th>
-                <th>Decision</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for req in my_requests %}
-            <tr>
-                <td>{{ req.item.name }}</td>
-                <td>{{ req.quantity }}</td>
-                <td>
-                    <span class="badge bg-{{ req.status }}">
-                        {{ req.status|capfirst }}
-                    </span>
-                </td>
-                <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
-                <td>{{ req.decision_date|default:"--" }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5">No requests made yet.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<style>
+    .faculty-dashboard {
+        padding: 0;
+    }
+
+    .list-group {
+        border-radius: 12px;
+    }
+
+    .list-group-item {
+        transition: background-color 0.2s ease;
+    }
+
+    .list-group-item:hover {
+        background-color: #e9ecef;
+    }
+
+    .btn {
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        background-color: #0a58ca;
+        transform: translateY(-2px);
+    }
+
+    .table {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .table th {
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem;
+    }
+
+    .table td {
+        vertical-align: middle;
+        padding: 1rem;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #e9ecef;
+    }
+
+    .badge {
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+</style>
 {% endblock %}

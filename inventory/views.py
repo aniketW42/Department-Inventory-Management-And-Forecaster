@@ -9,6 +9,9 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from .utils import forecast_usage_from_excel
+from notifications.utils import notify_user
+from django.contrib.auth.models import Group
+
 import os
 
 def home(request):
@@ -21,23 +24,26 @@ def home(request):
     else:
         return render(request, 'base.html')  
 
-@login_required
-def request_item(request, item_id):
-    item = get_object_or_404(InventoryItem, id=item_id)
+# @login_required
+# def request_item(request, item_id):
+#     item = get_object_or_404(InventoryItem, id=item_id)
 
-    if request.method == 'POST':
-        form = ItemRequestForm(request.POST)
-        if form.is_valid():
-            item_request = form.save(commit=False)
-            item_request.user = request.user
-            item_request.item = item  # set the item manually
-            item_request.status = 'pending'
-            item_request.save()
-            return redirect('faculty_dashboard')
-    else:
-        form = ItemRequestForm(initial={'item': item})
+#     if request.method == 'POST':
+#         form = ItemRequestForm(request.POST)
+#         if form.is_valid():
+#             item_request = form.save(commit=False)
+#             item_request.user = request.user
+#             item_request.item = item  # set the item manually
+#             item_request.status = 'pending'
+#             item_request.save()
+#             hod_group = Group.objects.get(name='HOD')
+#             for hod in hod_group.user_set.all():
+#                 notify_user(hod, f"{request.user.username} requested {item.name} of quantity {item_request.quantity}.")
+#             return redirect('faculty_dashboard')
+#     else:
+#         form = ItemRequestForm(initial={'item': item})
 
-    return render(request, 'requests/request_item.html', {'form': form, 'item': item})
+#     return render(request, 'requests/request_item.html', {'form': form, 'item': item})
 
 def logout_page(request):
     logout(request)
@@ -85,7 +91,10 @@ def process_request(request, request_id):
             item_request.status = 'approved'
             item_request.processed_by = request.user
             item_request.save()
-
+            notify_user(item_request.user, f"Your request for {item.name} has been approved by {request.user}.")
+            clerk_group = Group.objects.get(name='Clerk')
+            for clerk in clerk_group.user_set.all():
+                notify_user(clerk, f" {item_request.user}'s request for {item.name} has been approved by {request.user}.")
             messages.success(request, "Request approved and inventory updated.")
         else:
             messages.error(request, "Not enough stock to approve this request.")
@@ -95,7 +104,7 @@ def process_request(request, request_id):
         item_request.status = 'rejected'
         item_request.processed_by = request.user
         item_request.save()
-
+        notify_user(item_request.user, f"Your request for {item.item.name} has been rejected.")
         messages.info(request, "Request has been rejected.")
 
     else:
@@ -124,7 +133,7 @@ def clerk_dashboard(request):
     pending_requests = ItemRequest.objects.filter(user=request.user, status='pending').count()
     issued_items = ItemRequest.objects.filter(user=request.user, status='issued').count()
 
-    recent_requests = ItemRequest.objects.filter(user=request.user).order_by('-request_date')[:5]
+    recent_requests = ItemRequest.objects.filter().order_by('-request_date')[:5]
 
     context = {
         'total_items': total_items,
@@ -190,11 +199,25 @@ def mark_as_issued(request, request_id):
 @login_required
 def show_all_items(request):
     items = InventoryItem.objects.all()
-    return render(request, 'inventory/show_all_items.html', {'items': items})
+
+    in_stock_items = items.filter(quantity__gte=5).count()   # Only items with good stock
+    low_stock_items = items.filter(quantity__gt=0, quantity__lt=10).count()
+    out_of_stock_items = items.filter(quantity=0).count()
+
+    stock_info = {
+        'in_stock': in_stock_items,
+        'low_stock': low_stock_items,
+        'out_stock': out_of_stock_items,
+    }
+
+    return render(request, 'inventory/show_all_items.html', {
+        'items': items,
+        'stock_info': stock_info
+    })
 
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from .models import InventoryItem
 
 @require_POST
@@ -253,3 +276,31 @@ def predict_usage(request, year):
         'forecast_data': forecast_data,
         'forecast_year': forecast_year
     })
+
+
+@login_required
+def request_item_page(request):
+    items = InventoryItem.objects.filter(quantity__gt=0)
+    return render(request, 'requests/request_item.html', {'items': items})
+
+@login_required
+def submit_item_request(request):
+    if request.method == 'POST':
+        item_id = request.POST.get('item_id')
+        quantity = request.POST.get('quantity')
+        reason = request.POST.get('reason')
+        item = get_object_or_404(InventoryItem, id=item_id)
+
+        ItemRequest.objects.create(
+            user=request.user,
+            item=item,
+            quantity=quantity,
+            reason=reason,
+            status='pending'
+        )
+        hod_group = Group.objects.get(name='HOD')
+        for hod in hod_group.user_set.all():
+            notify_user(hod, f"{request.user.username} requested {item.name} of quantity {quantity}.")
+        messages.success(request, 'Request submitted successfully.')
+        return redirect('faculty_dashboard')
+    return HttpResponseBadRequest("Invalid request.")

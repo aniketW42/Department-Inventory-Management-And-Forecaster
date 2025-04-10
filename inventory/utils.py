@@ -43,6 +43,6 @@ def forecast_usage_from_excel(file_path, forecast_year):
         fit = model.fit()
 
         prediction = fit.forecast(steps_ahead).iloc[-1]
-        hw_predictions[item_name] = round(prediction)
+        hw_predictions[item_name] = int(prediction) + 1
 
     return hw_predictions
