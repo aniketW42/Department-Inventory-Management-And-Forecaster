@@ -8,7 +8,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
-
+from .utils import forecast_usage_from_excel
+import os
 
 def home(request):
     if is_clerk(request.user):
@@ -230,3 +231,20 @@ def edit_item(request, pk):
     else:
         form = InventoryItemForm(instance=item)
     return render(request, 'inventory/edit_item.html', {'form': form, 'item': item})
+
+
+
+def predict_usage(request):
+    forecast_data = {}
+    forecast_year = 2025  # You can later make this dynamic from a form
+
+    excel_path = os.path.join('media', 'stationery_usage.xlsx')  # Make sure file exists
+    try:
+        forecast_data = forecast_usage_from_excel(excel_path, forecast_year)
+    except Exception as e:
+        forecast_data = {'error': str(e)}
+
+    return render(request, 'predict_usage.html', {
+        'forecast_data': forecast_data,
+        'forecast_year': forecast_year
+    })

@@ -1,0 +1,18 @@
+<h1>Predicted Stationery Usage for {{ forecast_year }}</h1>
+
+{% if forecast_data.error %}
+  <p style="color:red;">Error: {{ forecast_data.error }}</p>
+{% else %}
+  <table border="1">
+    <tr>
+      <th>Item</th>
+      <th>Predicted Usage</th>
+    </tr>
+    {% for item, prediction in forecast_data.items %}
+    <tr>
+      <td>{{ item }}</td>
+      <td>{{ prediction }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+{% endif %}
