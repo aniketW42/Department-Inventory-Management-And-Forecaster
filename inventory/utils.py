@@ -21,9 +21,21 @@ def forecast_usage_from_excel(file_path, forecast_year):
         raise ValueError("Forecast year must be greater than the last year in the dataset!")
 
     hw_predictions = {}
-    for index, row in df.iterrows():
-        item_name = row['Item']
-        usage_values = row.iloc[1:].values.astype(float)
+    # for index, row in df.iterrows():
+    #     item_name = row['Item']
+    #     usage_values = row.iloc[1:].values.astype(float)
+    #     year_range = list(range(2020, 2020 + len(usage_values)))
+    #     usage_series = pd.Series(usage_values, index=year_range)
+
+    #     model = ExponentialSmoothing(usage_series, trend='add', seasonal=None)
+    #     fit = model.fit()
+
+    #     prediction = fit.forecast(steps_ahead).iloc[-1]
+    #     hw_predictions[item_name] = round(prediction)
+
+    for row in df.itertuples(index=False):
+        item_name = row.Item
+        usage_values = list(row[1:])
         year_range = list(range(2020, 2020 + len(usage_values)))
         usage_series = pd.Series(usage_values, index=year_range)
 
@@ -31,6 +43,6 @@ def forecast_usage_from_excel(file_path, forecast_year):
         fit = model.fit()
 
         prediction = fit.forecast(steps_ahead).iloc[-1]
-        hw_predictions[item_name] = round(prediction, 2)
+        hw_predictions[item_name] = round(prediction)
 
     return hw_predictions

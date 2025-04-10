@@ -19,6 +19,6 @@ urlpatterns = [
     path('items/add/', add_item, name='add_item'),
     path('items/edit/<int:pk>/', edit_item, name='edit_item'),
     path('delete-item/<int:pk>/', delete_item, name='delete_item'),
-    path('predict-usage/', predict_usage, name='predict_usage'),
+    path('predict-usage/<int:year>', predict_usage, name='predict_usage'),
 
 ]

@@ -234,9 +234,14 @@ def edit_item(request, pk):
 
 
 
-def predict_usage(request):
+def predict_usage(request, year):
     forecast_data = {}
-    forecast_year = 2025  # You can later make this dynamic from a form
+    # Ensure the year is an integer
+    try:
+        year = int(year)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid year format'}, status=400)
+    forecast_year = year  # You can later make this dynamic from a form
 
     excel_path = os.path.join('media', 'stationery_usage.xlsx')  # Make sure file exists
     try:

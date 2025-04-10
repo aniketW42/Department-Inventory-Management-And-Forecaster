@@ -1,4 +1,4 @@
-<h1>Predicted Stationery Usage for {{ forecast_year }}</h1>
+{% comment %} <h1>Predicted Stationery Usage for {{ forecast_year }}</h1>
 
 {% if forecast_data.error %}
   <p style="color:red;">Error: {{ forecast_data.error }}</p>
@@ -15,4 +15,173 @@
     </tr>
     {% endfor %}
   </table>
-{% endif %}
+{% endif %} {% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stationery Usage Forecast - {{ forecast_year }}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: #f9f9f9;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        .header {
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-weight: 600;
+        }
+        .year-label {
+            color: #3498db;
+            font-weight: 500;
+        }
+        .error-message {
+            background-color: #fff5f5;
+            color: #e53e3e;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid #e53e3e;
+            margin-bottom: 1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        .data-row:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .footer {
+            margin-top: 2rem;
+            text-align: right;
+            color: #718096;
+            font-size: 0.875rem;
+        }
+        .export-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+        .export-btn:hover {
+            background-color: #2980b9;
+        }
+        .actions-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Stationery Usage Forecast <span class="year-label">{{ forecast_year }}</span></h1>
+        </div>
+        
+        {% if forecast_data.error %}
+        <div class="error-message">
+            <strong>Error:</strong> {{ forecast_data.error }}
+        </div>
+        {% else %}
+        <div class="actions-bar">
+            <button class="export-btn" onclick="exportToExcel()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export to Excel
+            </button>
+        </div>
+        <table id="forecast-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Predicted Usage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item, prediction in forecast_data.items %}
+                <tr class="data-row">
+                    <td>{{ item }}</td>
+                    <td>{{ prediction }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        
+        <div class="footer">
+            Generated on {% now "F j, Y" %}
+        </div>
+    </div>
+
+    <script>
+        function exportToExcel() {
+            // Create a new workbook
+            const workbook = XLSX.utils.book_new();
+            
+            // Get the table element
+            const table = document.getElementById('forecast-table');
+            
+            // Convert the table to a worksheet
+            const worksheet = XLSX.utils.table_to_sheet(table);
+            
+            // Add the worksheet to the workbook
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Stationery Forecast');
+            
+            // Generate filename with year
+            const filename = `Stationery_Forecast_{{ forecast_year }}.xlsx`;
+            
+            // Write the workbook and trigger a download
+            XLSX.writeFile(workbook, filename);
+        }
+    </script>
+</body>
+</html>
