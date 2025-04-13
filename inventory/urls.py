@@ -23,4 +23,5 @@ urlpatterns = [
     path('request-item/', request_item_page, name='request_item'),
     path('submit-request/', submit_item_request, name='request_item_submit'),
     path('categories/', category_list, name='category_list'),
+    path('forecast/', inventory_forecast_view, name='inventory_forecast')
 ]

@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+{% block title %}Inventory Forecast{% endblock %}
+
+{% block content %}
+{% load static %}
+<div class="pb-4">
+    <div class="container">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm bg-white">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="fw-bold text-primary mb-1">Inventory Usage Forecast</h2>
+                                <p class="text-secondary mb-0">Predict your inventory needs based on historical data</p>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-graph-up-arrow text-primary fs-2"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Form Section -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white p-4 border-0">
+                        <h4 class="fw-bold mb-0">
+                            <i class="bi bi-cloud-upload me-2 text-primary"></i>Upload Data
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Upload Historical Data</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="bi bi-file-earmark-excel"></i>
+                                    </span>
+                                    <input type="file" name="file" class="form-control form-control-lg" required>
+                                </div>
+                                <small class="text-muted">Upload CSV or Excel file with your historical data</small>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Select Year for Forecast</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="bi bi-calendar3"></i>
+                                    </span>
+                                    <select name="forecast_year" class="form-select form-select-lg" required>
+                                        <option value="{{ forecast_year.0 }}">{{ forecast_year.0 }}</option>
+                                        <option value="{{ forecast_year.1 }}">{{ forecast_year.1 }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-lightning me-2"></i>Generate Forecast
+                                </button>
+                                <a href="{% static 'forecast/sample_template.csv' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-download me-2"></i>Download Sample Template
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white p-4 border-0">
+                        <h4 class="fw-bold mb-0">
+                            <i class="bi bi-info-circle me-2 text-primary"></i>How It Works
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-4">
+                            <div class="d-flex mb-3">
+                                <div class="bg-primary bg-opacity-10 p-2 me-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <span class="fw-bold text-primary">1</span>
+                                </div>
+                                <div>
+                                    <h5 class="fw-semibold mb-1">Upload Your Data</h5>
+                                    <p class="text-muted mb-0">Upload historical inventory usage data in CSV or Excel format</p>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex mb-3">
+                                <div class="bg-primary bg-opacity-10 p-2 me-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <span class="fw-bold text-primary">2</span>
+                                </div>
+                                <div>
+                                    <h5 class="fw-semibold mb-1">Select Forecast Year</h5>
+                                    <p class="text-muted mb-0">Choose which year you want to generate predictions for</p>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex">
+                                <div class="bg-primary bg-opacity-10 p-2 me-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <span class="fw-bold text-primary">3</span>
+                                </div>
+                                <div>
+                                    <h5 class="fw-semibold mb-1">View Results</h5>
+                                    <p class="text-muted mb-0">Get detailed forecasts with charts and downloadable reports</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+         
+
+        <!-- Forecast Results Section -->
+        {% if forecast_data %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+                        <h4 class="fw-bold mb-0">
+                            <i class="bi bi-bar-chart me-2 text-primary"></i>Forecast for {{selected_year}}
+                        </h4>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-2">
+                                <i class="bi bi-download me-1"></i>Export Data
+                            </button>
+                            <button class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-printer me-1"></i>Print Report
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Summary Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3 mb-md-0">
+                                <div class="card border-0 bg-primary bg-opacity-10 h-100">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold text-primary mb-0">Total Items</h6>
+                                            <i class="bi bi-box fs-4 text-primary"></i>
+                                        </div>
+                                        <h3 class="fw-bold mb-0">{{ forecast_data|length }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3 mb-md-0">
+                                <div class="card border-0 bg-success bg-opacity-10 h-100">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold text-success mb-0">Avg. Prediction</h6>
+                                            <i class="bi bi-arrow-up-right fs-4 text-success"></i>
+                                        </div>
+                                        <h3 class="fw-bold mb-0">{{ avg_prediction|default:"145" }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3 mb-md-0">
+                                <div class="card border-0 bg-info bg-opacity-10 h-100">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold text-info mb-0">Available Items</h6>
+                                            <i class="bi bi-check-circle fs-4 text-info"></i>
+                                        </div>
+                                        <h3 class="fw-bold mb-0">{{ available_items|default:"88" }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-0 bg-warning bg-opacity-10 h-100">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold text-warning mb-0">Required Items</h6>
+                                            <i class="bi bi-exclamation-circle fs-4 text-warning"></i>
+                                        </div>
+                                        <h3 class="fw-bold mb-0">{{ required_items|default:"57" }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-8 mb-4 mb-md-0">
+                                <div class="card border bg-white h-100">
+                                    <div class="card-header bg-white border-0">
+                                        <h5 class="fw-bold mb-0">Usage Forecast by Item</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="forecastChart" height="300"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border bg-white h-100">
+                                    <div class="card-header bg-white border-0">
+                                        <h5 class="fw-bold mb-0">Category Distribution</h5>
+                                    </div>
+                                    <div class="card-body d-flex align-items-center justify-content-center">
+                                        <canvas id="categoryChart" height="250"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Results Table -->
+                        <div class="card border">
+                            <div class="card-header bg-white p-3 d-flex justify-content-between align-items-center">
+                                <h5 class="fw-bold mb-0">Detailed Forecast Results</h5>
+                                <div class="input-group" style="width: 250px;">
+                                    <input type="text" class="form-control" placeholder="Search items...">
+                                    <button class="btn btn-outline-secondary" type="button">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th class="py-3 px-4">#</th>
+                                                <th class="py-3 px-4">Item Name</th>
+                                                <th class="py-3 px-4">Predicted Usage ({{selected_year}})</th>
+                                                <th class="py-3 px-4">Available Items</th>
+                                                <th class="py-3 px-4">Required Items</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item, prediction in forecast_data.items %}
+                                                <tr>
+                                                    <td class="py-3 px-4">{{ forloop.counter }}</td>
+                                                    <td class="py-3 px-4 fw-semibold">{{ item }}</td>
+                                                    <td class="py-3 px-4">{{ prediction }}</td>
+                                                    <td class="py-3 px-4 text-success">{{ available_items_list|default:50|add:forloop.counter0|add:-10 }}</td>
+                                                    <td class="py-3 px-4 text-warning">{{ prediction}}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white p-3">
+                                <nav aria-label="Page navigation">
+                                    <ul class="pagination justify-content-end mb-0">
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                                        </li>
+                                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="#">Next</a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Bootstrap Icons and Chart.js -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<script>
+{% if forecast_data %}
+// Chart JS Initialization
+document.addEventListener('DOMContentLoaded', function() {
+    // Bar Chart for Forecast Data
+    const forecastCtx = document.getElementById('forecastChart').getContext('2d');
+const forecastChart = new Chart(forecastCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for item, prediction in forecast_data.items %}'{{ item }}',{% endfor %}],
+        datasets: [{
+            label: 'Predicted Usage',
+            data: [{% for item, prediction in forecast_data.items %}{{ prediction }},{% endfor %}],
+            backgroundColor: 'rgba(13, 110, 253, 0.6)',
+            borderColor: 'rgba(13, 110, 253, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    drawBorder: false
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    display: false // Hide x-axis labels
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    title: function(tooltipItems) {
+                        return tooltipItems[0].label; // Show full item name in tooltip
+                    }
+                }
+            }
+        }
+    }
+});
+
+    // Pie Chart for Category Distribution
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Office Supplies', 'Electronics', 'Furniture', 'Other'],
+            datasets: [{
+                data: [35, 25, 20, 20],
+                backgroundColor: [
+                    'rgba(13, 110, 253, 0.7)',
+                    'rgba(25, 135, 84, 0.7)',
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(108, 117, 125, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(13, 110, 253, 1)',
+                    'rgba(25, 135, 84, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(108, 117, 125, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+{% endif %}
+</script>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+        color: #343a40;
+    }
+
+    .card {
+        border-radius: 10px;
+        transition: transform 0.2s ease;
+        border: none;
+    }
+
+    .card.border {
+        border: 1px solid #e9ecef !important;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .table th {
+        font-weight: 600;
+        color: #343a40;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+
+    .btn-primary {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0a58ca;
+        border-color: #0a58ca;
+    }
+
+    .shadow-sm {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+    }
+
+    /* Page specific styling */
+    .bg-light {
+        background-color: #f8f9fa !important;
+    }
+
+    /* Form styling */
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    /* Table styling enhancement */
+    .table {
+        margin-bottom: 0;
+    }
+    
+    /* Pagination styling */
+    .page-link {
+        color: #0d6efd;
+    }
+    
+    .page-item.active .page-link {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+</style>
+{% endblock %}
