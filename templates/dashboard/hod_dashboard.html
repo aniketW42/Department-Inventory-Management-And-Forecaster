@@ -2,7 +2,7 @@
 {% block title %}HOD Dashboard{% endblock %}
 {% block content %}
 
-<div class="container-fluid ">
+<div class="">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold">HOD Dashboard</h2>
     <a href="{% url 'request_history' %}" class="btn btn-primary">
@@ -100,7 +100,7 @@
           <ul class="nav nav-tabs" id="requestTabs">
             <li class="nav-item">
               <a class="nav-link active py-3 px-4" data-bs-toggle="tab" href="#all">
-                <i class="fas fa-list-ul me-2"></i>All Requests
+                <i class="fas fa-list-ul me-2"></i>Recent Requests
               </a>
             </li>
             <li class="nav-item">
@@ -183,10 +183,10 @@
                             <form method="post" action="{% url 'process_request' req.id %}" class="d-flex gap-2">
                               {% csrf_token %}
                               <button name="action" value="approve" class="btn btn-sm btn-success">
-                                <i class="fas fa-check me-1"></i> Approve
+                                <i class="fas fa-check me-0"></i> Approve
                               </button>
                               <button name="action" value="reject" class="btn btn-sm btn-danger">
-                                <i class="fas fa-times me-1"></i> Reject
+                                <i class="fas fa-times me-0"></i> Reject
                               </button>
                             </form>
                           </td>

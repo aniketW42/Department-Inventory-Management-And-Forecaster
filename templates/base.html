@@ -165,14 +165,17 @@
     </style>
 </head>
 <body>
-    <!-- Top Navigation Bar -->
+    
+    {% load auth_extras %}
+    {% if request.user.is_authenticated %}
+    
+        <!-- Top Navigation Bar -->
     <nav class="navbar navbar-light fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
                 <i class="bi bi-building me-2"></i>
                 College Department Inventory
             </a>
-            
                 <a  class="btn position-relative btn-outline-secondary d-flex align-items-center " href="{% url 'notification_list' %}"> 
                     
                     <i class="bi bi-bell bg"></i>
@@ -184,9 +187,6 @@
                         </span>
                     {% endif %}
                 </a>
-                
-                
-            
         </div>
     </nav>
 
@@ -200,50 +200,41 @@
                 </a>
                 
                 <ul class="nav nav-pills flex-column mb-auto">
+
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
+                        <a class="nav-link {% if request.resolver_match.url_name in 'faculty_dashboard,clerk_dashboard,hod_dashboard' %}active{% endif %}" href="{% url 'home' %}">
                             <i class="bi bi-speedometer2 me-2"></i>
                             <span class="nav-text">Dashboard</span>
                         </a>
                     </li>
                     
                     <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="collapse" href="#inventorySubmenu" role="button" aria-expanded="false" aria-controls="inventorySubmenu">
+                        <a class="nav-link {% if request.resolver_match.url_name in 'inventory_items' %}active{% endif %}" href="{% url 'inventory_items' %}" >
                             <i class="bi bi-box me-2"></i>
                             <span class="nav-text">Inventory</span>
                         </a>
-                        <div class="collapse" id="inventorySubmenu">
-                            <ul class="nav flex-column ms-3">
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{% url 'inventory_items' %}">
-                                        <i class="bi bi-list-ul me-2"></i>
-                                        <span class="nav-text">All Items</span>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{% url "add_item" %}">
-                                        <i class="bi bi-plus-circle me-2"></i>
-                                        <span class="nav-text">Add New Item</span>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" href="#">
-                                        <i class="bi bi-tag me-2"></i>
-                                        <span class="nav-text">Categories</span>
-                                    </a>
-                                </li>
-                                
-                            </ul>
-                        </div>
+                        
                     </li>
-                    
+                    {% if user|in_group:"Clerk" %}
+                    <li class="nav-item ">
+                        <a class="nav-link {% if request.resolver_match.url_name in 'add_item' %}active{% endif %}" href="{% url "add_item" %}">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            <span class="nav-text">Add New Item</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item ">
+                        <a class="nav-link {% if request.resolver_match.url_name in 'request_item' %}active{% endif %}" href="{% url "request_item" %}">
+                            <i class="bi bi-bag-plus me-2"></i>
+                            <span class="nav-text">Request Item</span>
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link {% if 'reports' in request.path %}active{% endif %}" href="#">
                             <i class="bi bi-file-earmark-bar-graph me-2"></i>
                             <span class="nav-text">Reports</span>
                         </a>
                     </li>
-                    {% comment %} {% if is_clerk %} {% endcomment %}
                     
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'maintenance' %}active{% endif %}" href="#">
@@ -251,7 +242,6 @@
                             <span class="nav-text">Maintenance</span>
                         </a>
                     </li>
-                    {% comment %} {% endif %} {% endcomment %}
                 </ul>
                 
                 <div class="mt-auto p-3 border-top">
@@ -264,7 +254,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-start" aria-labelledby="userDropdown">
                             {% if user.is_authenticated %}
-                                {% if user.is_staff %}
+                                {% if user.is_superuser %}
                                     <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Admin Panel</a></li>
                                 {% endif %}
                                 <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>My Profile</a></li>
@@ -279,6 +269,8 @@
                 </div>
             </div>
         </nav>
+
+    {% endif %}
 
         <!-- Main Content Area -->
         <div class="main-content">

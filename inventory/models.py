@@ -6,12 +6,19 @@ class InventoryItem(models.Model):
         ('consumable', 'Consumable'),
         ('non-consumable', 'Non-Consumable'),
     ]
-
+    CATEGORY_CHOICES = [
+        ('furniture', 'Furniture'),
+        ('electronics', 'Electronics'),
+        ('stationery', 'Stationery'),
+        ('tools', 'Tools'),
+        ('cleaning_supplies', 'Cleaning Supplies'),
+        ('other', 'Other'),
+    ]
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
     quantity = models.PositiveIntegerField()
-    category = models.CharField(max_length=100, blank=True)
+    category = models.CharField(max_length=100, choices=CATEGORY_CHOICES, blank=True)
     location = models.CharField(max_length=100, blank=True)
     reorder_level = models.PositiveIntegerField(default=5)
     date_added = models.DateTimeField(auto_now_add=True)

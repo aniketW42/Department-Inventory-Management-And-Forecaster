@@ -108,6 +108,7 @@
 {% endblock %}
 
 {% block content %}
+{% load auth_extras %}
 <!-- Main Container -->
 <div class="dashboard-header mb-4">
     <div class="container">
@@ -116,11 +117,13 @@
                 <h1 class="h3 mb-0 fw-bold" style="color: #343a40;">Inventory Dashboard</h1>
                 <p class="mb-0" style="color: #6c757d;">Manage your inventory items</p>
             </div>
+            {% if user|in_group:"Clerk" %}
             <div class="col-auto">
                 <a href="{% url 'add_item' %}" class="btn btn-primary d-flex align-items-center text-white">
                     <i class="bi bi-plus-lg me-2"></i> Add New Item
                 </a>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -204,6 +207,7 @@
                 <button class="btn btn-primary" type="button" id="searchButton">Search</button>
             </div>
         </div>
+        
         <div class="col-md-6 d-flex justify-content-md-end">
             <div class="btn-group me-2">
                 <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
@@ -252,12 +256,16 @@
 
     <!-- Inventory Table Card -->
     <div class="card inventory-card mb-4">
+        
         <div class="card-header py-3 d-flex justify-content-between align-items-center" style="background-color: #ffffff; border-bottom: 1px solid #e9ecef;">
             <h5 class="mb-0" style="color: #343a40;">Inventory Items</h5>
-            <div id="currentFilter" class="badge" style="background-color: #e9ecef; color: #6c757d;">
-                Showing all items
+
+            
+            <div id="currentFilter" class="badge bg-light text-muted p-2">
+                Showing All Items
             </div>
         </div>
+        
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0" id="inventoryTable" style="background-color: #ffffff;">
@@ -269,7 +277,9 @@
                             <th scope="col" class="sortable" data-sort="quantity">Quantity</th>   
                             <th scope="col" class="sortable" data-sort="date">Date Added</th>
                             <th scope="col">Status</th>
+                            {% if user|in_group:"Clerk" %}
                             <th scope="col" class="text-end">Actions</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody style="color: #343a40;">
@@ -300,6 +310,7 @@
                                 <span class="badge" style="background-color: #28a745; color: white;">In Stock</span>
                                 {% endif %}
                             </td>
+                            {% if user|in_group:"Clerk" %}
                             <td class="text-end">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-sm btn-icon" 
@@ -314,6 +325,7 @@
                                     </button>
                                 </div>
                             </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -327,10 +339,12 @@
                 <i class="bi bi-inbox" style="font-size: 3rem; color: #6c757d;"></i>
             </div>
             <h5 class="fw-bold" style="color: #343a40;">No inventory items found</h5>
+            {% if user|in_group:"Clerk" %}
             <p class="mb-4" style="color: #6c757d;">Start by adding your first inventory item</p>
             <a href="{% url 'add_item' %}" class="btn btn-primary">
                 <i class="bi bi-plus-lg me-2"></i> Add Your First Item
             </a>
+            {% endif %}
         </div>
         {% endif %}
         
@@ -526,9 +540,21 @@
                         filterText = 'Showing out-of-stock items';
                         break;
                     case 'sort-newest':
+                        const sortedNewest = Array.from(items).sort((a, b) => {
+                            const dateA = new Date(a.querySelector('td:nth-child(5)').textContent.trim());
+                            const dateB = new Date(b.querySelector('td:nth-child(5)').textContent.trim());
+                            return dateB - dateA;
+                        });
+                        sortedNewest.forEach(item => item.parentNode.appendChild(item));
                         filterText = 'Sorted by newest first';
                         break;
                     case 'sort-oldest':
+                        const sortedOldest = Array.from(items).sort((a, b) => {
+                            const dateA = new Date(a.querySelector('td:nth-child(5)').textContent.trim());
+                            const dateB = new Date(b.querySelector('td:nth-child(5)').textContent.trim());
+                            return dateA - dateB;
+                        });
+                        sortedOldest.forEach(item => item.parentNode.appendChild(item));
                         filterText = 'Sorted by oldest first';
                         break;
                 }

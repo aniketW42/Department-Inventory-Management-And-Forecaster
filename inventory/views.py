@@ -1,17 +1,15 @@
-from .utils import is_clerk, is_faculty, is_hod
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
-from .models import ItemRequest, InventoryItem
-from .forms import ItemRequestForm
-from django.contrib.auth import login ,logout, authenticate
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404
 from django.contrib import messages
-from .utils import forecast_usage_from_excel
-from notifications.utils import notify_user
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.contrib.auth.models import Group
-
+from .utils import is_clerk, is_faculty, is_hod, forecast_usage_from_excel
+from .models import ItemRequest, InventoryItem
+from .forms import InventoryItemForm
+from notifications.utils import notify_user
 import os
 
 def home(request):
@@ -22,32 +20,12 @@ def home(request):
     elif is_hod(request.user):
         return redirect('hod_dashboard')
     else:
-        return render(request, 'base.html')  
-
-# @login_required
-# def request_item(request, item_id):
-#     item = get_object_or_404(InventoryItem, id=item_id)
-
-#     if request.method == 'POST':
-#         form = ItemRequestForm(request.POST)
-#         if form.is_valid():
-#             item_request = form.save(commit=False)
-#             item_request.user = request.user
-#             item_request.item = item  # set the item manually
-#             item_request.status = 'pending'
-#             item_request.save()
-#             hod_group = Group.objects.get(name='HOD')
-#             for hod in hod_group.user_set.all():
-#                 notify_user(hod, f"{request.user.username} requested {item.name} of quantity {item_request.quantity}.")
-#             return redirect('faculty_dashboard')
-#     else:
-#         form = ItemRequestForm(initial={'item': item})
-
-#     return render(request, 'requests/request_item.html', {'form': form, 'item': item})
-
+        return redirect('login')
+    
+@login_required
 def logout_page(request):
     logout(request)
-    return redirect('home')
+    return redirect('login')
 
 def login_page(request):
     if request.method == 'POST':
@@ -56,10 +34,9 @@ def login_page(request):
         user = authenticate(username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('home')  
+            return redirect('home') 
         else:
             messages.error(request, 'Invalid Credentials')
-    
     return render(request, 'user/login.html')
 
 @login_required
@@ -67,7 +44,7 @@ def view_requests(request):
     requests = ItemRequest.objects.all().order_by('-request_date')
     return render(request, 'requests/view_requests.html', {'requests': requests})
 
-# @staff_member_required
+@user_passes_test(is_hod or is_clerk)
 def manage_requests(request):
     requests = ItemRequest.objects.all().order_by('-request_date')
     return render(request, 'inventory/manage_requests.html', {'requests': requests})
@@ -117,16 +94,13 @@ def process_request(request, request_id):
 def request_history(request):
     if is_faculty(request.user):
         requests = ItemRequest.objects.filter(user=request.user).order_by('-request_date')
-    else:  # Clerk or HOD
+    else: 
         requests = ItemRequest.objects.all().order_by('-request_date')
-    
     return render(request, 'requests/request_history.html', {'requests': requests})
 
-from django.contrib.auth.decorators import login_required
-from inventory.models import InventoryItem, ItemRequest
-from django.db.models import Count, Q
 
 @login_required
+@user_passes_test(is_clerk)
 def clerk_dashboard(request):
     total_items = InventoryItem.objects.count()
     low_stock_items = InventoryItem.objects.filter(quantity__lt=5).count()  # Adjust threshold
@@ -147,6 +121,7 @@ def clerk_dashboard(request):
 from django.contrib.admin.views.decorators import staff_member_required
 
 @staff_member_required
+@user_passes_test(is_hod)
 def hod_dashboard(request):
     total_requests = ItemRequest.objects.count()
     pending_requests = ItemRequest.objects.filter(status='pending').count()
@@ -164,10 +139,8 @@ def hod_dashboard(request):
     }
     return render(request, 'dashboard/hod_dashboard.html', context)
 
-from django.contrib.auth.decorators import login_required
-from inventory.models import InventoryItem, ItemRequest
-
 @login_required
+@user_passes_test(is_faculty)
 def faculty_dashboard(request):
     items = InventoryItem.objects.all()
     my_requests = ItemRequest.objects.filter(user=request.user).order_by('-request_date')
@@ -175,8 +148,6 @@ def faculty_dashboard(request):
         'items': items,
         'my_requests': my_requests
     })
-
-from django.views.decorators.http import require_POST
 
 @login_required
 @user_passes_test(is_clerk)
@@ -193,8 +164,7 @@ def mark_as_issued(request, request_id):
     item_request.status = 'Issued'
     item_request.save()
     messages.success(request, "Item marked as issued.")
-    return redirect('issue_items')  # URL name for issue_items view
-
+    return redirect('issue_items')  
 
 @login_required
 def show_all_items(request):
@@ -209,18 +179,16 @@ def show_all_items(request):
         'low_stock': low_stock_items,
         'out_stock': out_of_stock_items,
     }
-
+    categories = InventoryItem.CATEGORY_CHOICES
     return render(request, 'inventory/show_all_items.html', {
         'items': items,
-        'stock_info': stock_info
+        'stock_info': stock_info,
+        'categories': categories,
     })
 
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse, HttpResponseBadRequest
-from .models import InventoryItem
-
+@login_required
 @require_POST
+@user_passes_test(is_clerk)
 def delete_item(request, pk):
     try:
         item = InventoryItem.objects.get(pk=pk)
@@ -229,8 +197,8 @@ def delete_item(request, pk):
     except InventoryItem.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Item not found'})
 
-from .forms import InventoryItemForm
-
+@login_required
+@user_passes_test(is_clerk)
 def add_item(request):
     if request.method == 'POST':
         form = InventoryItemForm(request.POST)
@@ -242,7 +210,8 @@ def add_item(request):
         form = InventoryItemForm()
     return render(request, 'inventory/add_item.html', {'form': form})
 
-
+@login_required
+@user_passes_test(is_clerk)
 def edit_item(request, pk):
     item = get_object_or_404(InventoryItem, pk=pk)
     if request.method == 'POST':
@@ -255,18 +224,17 @@ def edit_item(request, pk):
         form = InventoryItemForm(instance=item)
     return render(request, 'inventory/edit_item.html', {'form': form, 'item': item})
 
-
-
+@login_required
+@user_passes_test(is_clerk or is_hod)
 def predict_usage(request, year):
     forecast_data = {}
-    # Ensure the year is an integer
     try:
         year = int(year)
     except ValueError:
         return JsonResponse({'error': 'Invalid year format'}, status=400)
-    forecast_year = year  # You can later make this dynamic from a form
+    forecast_year = year 
 
-    excel_path = os.path.join('media', 'stationery_usage.xlsx')  # Make sure file exists
+    excel_path = os.path.join('media', 'stationery_usage.xlsx') 
     try:
         forecast_data = forecast_usage_from_excel(excel_path, forecast_year)
     except Exception as e:
@@ -302,5 +270,18 @@ def submit_item_request(request):
         for hod in hod_group.user_set.all():
             notify_user(hod, f"{request.user.username} requested {item.name} of quantity {quantity}.")
         messages.success(request, 'Request submitted successfully.')
-        return redirect('faculty_dashboard')
+        return redirect('home')
     return HttpResponseBadRequest("Invalid request.")
+
+@login_required
+def category_list(request):
+    categories = InventoryItem.CATEGORY_CHOICES
+    if request.method == 'GET':
+        category = request.GET.get('category')
+        if category == 'all':
+            items = InventoryItem.objects.all()
+        else:
+            items = InventoryItem.objects.filter(category=category)
+    else:
+        items = InventoryItem.objects.all()
+    return render(request, 'inventory/show_all_items.html', {'categories': categories, 'items': items})
