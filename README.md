@@ -67,6 +67,10 @@ The **Department Inventory Management and Forecaster** is a web-based applicatio
 ### Contact
 For questions or suggestions:
 
-- **Name**: Aniket Wakte
+#### **Name**: Aniket Wakte
 - **Email**: [aniketwakte42@gmail.com](aniketwakte42@gmail.com)
 - **GitHub**: [aniketW42](https://github.com/aniketW42/)
+
+#### **Name**: Rohit Ray
+- **Email**: [rayrohit999@gmail.com](rayrohit999@gmail.com)
+- **GitHub**: [rayrohit999](https://github.com/rayrohit999)
