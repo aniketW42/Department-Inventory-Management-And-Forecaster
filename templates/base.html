@@ -1,24 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}College Department Inventory Management{% endblock %}</title>
+    <title>{% block title %}College Department Inventory{% endblock %}</title>
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% block extra_css %}{% endblock %}
     <style>
+        :root {
+            --sidebar-width: 250px;
+            --sidebar-collapsed-width: 64px;
+            --topbar-height: 60px;
+            --primary-color: #3875e8;
+            --primary-hover: #2b64cb;
+            --bg-light: #f8f9fa;
+            --bg-content: #ffffff;
+        }
+        
         body {
-            display: flex;
             min-height: 100vh;
+            display: flex;
             flex-direction: column;
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--bg-light);
         }
         
         .wrapper {
@@ -26,316 +34,492 @@
             flex: 1;
         }
         
+        /* Sidebar Styles */
         .sidebar {
-            width: 280px;
-            background: linear-gradient(180deg, #0d6efd 0%, #0a58ca 100%);
-            color: white;
-            flex-shrink: 0;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            transition: width 0.3s ease;
+            width: var(--sidebar-width);
+            transition: all 0.25s ease-in-out;
+            background-color: var(--primary-color);
+            color: rgba(255, 255, 255, 0.9);
             position: fixed;
-            top: 56px;
-            height: calc(100vh - 56px);
+            height: 100vh;
             overflow-y: auto;
+            z-index: 1030;
+        }
+        
+        .sidebar-header {
+            height: var(--topbar-height);
+            display: flex;
+            align-items: center;
+            padding: 0 1.25rem;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.85);
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.15s ease;
+            border-radius: 0;
+            margin: 2px 0;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.15);
+            font-weight: 500;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 0.75rem;
+            width: 1.5rem;
+            text-align: center;
+            font-size: 1.1rem;
         }
         
         .sidebar.collapsed {
-            width: 80px;
+            width: var(--sidebar-collapsed-width);
         }
         
-        .sidebar.collapsed .nav-text,
-        .sidebar.collapsed .navbar-brand span,
-        .sidebar.collapsed .dropdown-toggle::after {
+        .sidebar.collapsed .sidebar-header span,
+        .sidebar.collapsed .nav-link span {
             display: none;
         }
         
         .sidebar.collapsed .nav-link {
             justify-content: center;
-            padding: 0.75rem;
+            padding: 0.75rem 0;
         }
         
+        .sidebar.collapsed .nav-link i {
+            margin-right: 0;
+            font-size: 1.25rem;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+        
+        /* Main Content Styles */
         .main-content {
-            flex-grow: 1;
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.25s ease-in-out;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            background-color: #ffffff;
-            margin-left: 280px;
-            margin-top: 56px;
-            transition: margin-left 0.3s ease;
         }
         
-        .main-content.collapsed {
-            margin-left: 80px;
+        .main-content.sidebar-collapsed {
+            margin-left: var(--sidebar-collapsed-width);
         }
         
         .content {
             flex: 1;
-            padding: 0 2rem 0 2rem;
+            padding: 1.5rem;
+            {% comment %} padding-top: calc(var(--topbar-height) + 1.5rem); {% endcomment %}
         }
         
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.9);
-            padding: 0.75rem 1.25rem;
-            border-radius: 8px;
-            margin: 0.25rem 1rem;
-            transition: all 0.3s ease;
+        /* Top navbar styles */
+        .top-navbar {
+            height: var(--topbar-height);
+            background-color: white;
+            position: fixed;
+            right: 0;
+            left: var(--sidebar-width);
+            z-index: 1020;
+            transition: left 0.25s ease-in-out;
             display: flex;
             align-items: center;
+            padding: 0 1.5rem;
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
         }
         
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            color: white;
-            background-color: rgba(255, 255, 255, 0.15);
-            transform: translateX(5px);
+        .top-navbar.sidebar-collapsed {
+            left: var(--sidebar-collapsed-width);
         }
         
-        .sidebar .navbar-brand {
-            padding: 1.5rem 1.25rem;
-            font-size: 1.3rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        @media (max-width: 768px) {
+            .top-navbar {
+                left: 0;
+            }
         }
         
-        .sidebar .toggle-btn {
+        .top-navbar .back-button {
+            color: #6c757d;
+            font-size: 1.25rem;
+            margin-right: 1rem;
+        }
+        
+        .theme-toggle {
             cursor: pointer;
-            transition: transform 0.3s ease;
+            padding: 0.5rem;
+            color: #6c757d;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
         }
         
-        .sidebar.collapsed .toggle-btn {
-            transform: rotate(180deg);
+        .nav-btn {
+            border-radius: 50px;
+            padding: 0.375rem 1rem;
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border: 1px solid #dee2e6;
+            color: #6c757d;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            text-decoration: none;
         }
         
-        .sidebar .dropdown-menu {
-            background: #0b5ed7;
+        .nav-btn:hover {
+            background-color: var(--bg-light);
+        }
+        
+        .nav-btn i {
+            margin-right: 0.375rem;
+        }
+        
+        /* Content cards */
+        .card {
             border: none;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            background-color: var(--bg-content);
         }
         
-        .sidebar .dropdown-item {
-            color: white;
-            padding: 0.5rem 1.25rem;
-            transition: all 0.3s ease;
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 1rem 1.25rem;
         }
         
-        .sidebar .dropdown-item:hover {
-            background-color: rgba(255, 255, 255, 0.15);
+        /* Button styles */
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            font-weight: 500;
         }
         
-        .navbar {
-            background-color: #ffffff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            color: #343a40;
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
         }
         
-        .navbar .navbar-brand {
-            color: #343a40;
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
         }
         
-        .navbar .btn-primary {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
         }
         
-        .navbar .btn-primary:hover {
-            background-color: #0a58ca;
-            border-color: #0a58ca;
+        /* Form controls */
+        .form-control, .form-select {
+            border-radius: 4px;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #dee2e6;
         }
         
+        /* Footer styles */
         .footer {
-            background: #ffffff;
-            border-top: 1px solid #e9ecef;
-            padding: 1rem 2rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            background-color: white;
+            font-size: 0.875rem;
             color: #6c757d;
-            font-size: 0.9rem;
         }
-        .btn {
-            transition: all 0.3s ease;
+        
+        /* Mobile enhancements */
+        @media (max-width: 768px) {
+            .content {
+                {% comment %} padding-top: calc(var(--topbar-height) + 1rem); {% endcomment %}
+            }
+            
+            .footer .text-md-end {
+                text-align: left !important;
+                margin-top: 0.5rem;
+            }
         }
-    
-        .btn:hover {
-            background-color: #0a58ca;
-            transform: translateY(-2px);
+        
+        /* Utility classes */
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .icon-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Step indicators for "How It Works" */
+        .step-indicator {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: rgba(56, 117, 232, 0.1);
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 1rem;
         }
     </style>
 </head>
+
 <body>
-    
     {% load auth_extras %}
-    {% if request.user.is_authenticated %}
     
-        <!-- Top Navigation Bar -->
-    <nav class="navbar navbar-light fixed-top">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <i class="bi bi-building me-2"></i>
-                College Department Inventory
-            </a>
-                <a  class="btn position-relative btn-outline-secondary d-flex align-items-center " href="{% url 'notification_list' %}"> 
-                    
-                    <i class="bi bi-bell bg"></i>
-                    <p class="mb-0 ms-2">Notifications</p>
-                    {% if user.is_authenticated and user.notifications_unread_count > 0 %}
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            {{ user.notifications_unread_count }}
-                            <span class="visually-hidden">unread notifications</span>
-                        </span>
-                    {% endif %}
-                </a>
+    {% if request.user.is_authenticated %}
+    <!-- Left Side Navigation -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <span>Department Inventory</span>
         </div>
-    </nav>
-
-    <div class="wrapper">
-        <!-- Left Side Navigation -->
-        <nav class="sidebar">
-            <div class="d-flex flex-column h-100">
-                <a class="navbar-brand" href="#">
-                    <span>Department Inventory</span>
-                    <i class="bi bi-list toggle-btn mx-2" id="sidebarToggle"></i>
+        
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name in 'faculty_dashboard,clerk_dashboard,hod_dashboard' %}active{% endif %}" href="{% url 'home' %}">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
                 </a>
-                
-                <ul class="nav nav-pills flex-column mb-auto">
-
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name in 'faculty_dashboard,clerk_dashboard,hod_dashboard' %}active{% endif %}" href="{% url 'home' %}">
-                            <i class="bi bi-speedometer2 me-2"></i>
-                            <span class="nav-text">Dashboard</span>
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name in 'inventory_items' %}active{% endif %}" href="{% url 'inventory_items' %}" >
-                            <i class="bi bi-box me-2"></i>
-                            <span class="nav-text">Inventory</span>
-                        </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name in 'inventory_items' %}active{% endif %}" href="{% url 'inventory_items' %}">
+                    <i class="bi bi-box"></i>
+                    <span>Inventory</span>
+                </a>
+            </li>
+            {% if user|in_group:"Clerk" %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name in 'add_item' %}active{% endif %}" href="{% url 'add_item' %}">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Add Item</span>
+                </a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name in 'request_item' %}active{% endif %}" href="{% url 'request_item' %}">
+                    <i class="bi bi-bag-plus"></i>
+                    <span>Request</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if 'reports' in request.path %}active{% endif %}" href="#">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'maintenance' %}active{% endif %}" href="#">
+                    <i class="bi bi-wrench"></i>
+                    <span>Maintenance</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'inventory_forecast' %}active{% endif %}" href="{% url 'inventory_forecast' %}">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <span>Forecasting</span>
+                </a>
+            </li>
+            {% if user|in_group:"HOD" %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}" href="{% url 'manage_users' %}">
+                    <i class="bi bi-people"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    
+    <!-- Top Navigation Bar -->
+    <header class="top-navbar">
+        <button id="mobile-sidebar-toggle" class="icon-btn d-md-none me-2">
+            <i class="bi bi-list"></i>
+        </button>
+        <a href="#" class="back-button d-none d-md-block" onclick="if (document.referrer) { history.back(); } else { window.location.href = '{% url "home" %}'; }">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <a href="{% url 'home' %}" class="d-md-none text-decoration-none text-dark">
+            <span class="fw-semibold">CDI</span>
+        </a>
+        <div class="ms-auto d-flex align-items-center gap-3">
+            <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+                <i class="bi bi-sun" id="light-icon"></i>
+                <i class="bi bi-moon d-none" id="dark-icon"></i>
+            </button>
+            <a class="nav-btn position-relative" href="{% url 'notification_list' %}">
+                <i class="bi bi-bell"></i>
+                <span class="d-none d-sm-inline">Notifications</span>
+                {% if user.notifications_unread_count > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ user.notifications_unread_count }}
+                    <span class="visually-hidden">unread notifications</span>
+                </span>
+                {% endif %}
+            </a>
+        </div>
+        <div class="dropdown ms-3">
+            <button class="dropdown-toggle nav-btn" type="button" id="accountDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle"></i> {{ request.user.username|capfirst }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+                <li>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
                         
-                    </li>
-                    {% if user|in_group:"Clerk" %}
-                    <li class="nav-item ">
-                        <a class="nav-link {% if request.resolver_match.url_name in 'add_item' %}active{% endif %}" href="{% url "add_item" %}">
-                            <i class="bi bi-plus-circle me-2"></i>
-                            <span class="nav-text">Add New Item</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    <li class="nav-item ">
-                        <a class="nav-link {% if request.resolver_match.url_name in 'request_item' %}active{% endif %}" href="{% url "request_item" %}">
-                            <i class="bi bi-bag-plus me-2"></i>
-                            <span class="nav-text">Request Item</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if 'reports' in request.path %}active{% endif %}" href="#">
-                            <i class="bi bi-file-earmark-bar-graph me-2"></i>
-                            <span class="nav-text">Reports</span>
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'maintenance' %}active{% endif %}" href="#">
-                            <i class="bi bi-wrench me-2"></i>
-                            <span class="nav-text">Maintenance</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'inventory_forecast'  %}active{% endif %}" href="{% url "inventory_forecast" %}">
-                            <i class="bi bi-graph-up-arrow me-2"></i>
-                            <span class="nav-text">Inventory Forcasting</span>
-                        </a>
-                    </li>
-                </ul>
-                
-                <div class="mt-auto p-3 border-top">
-                    <div class="dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle me-2"></i>
-                            <span class="nav-text">
-                                {% if user.is_authenticated %}{{ user.username }}{% else %}Account{% endif %}
-                            </span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-start" aria-labelledby="userDropdown">
-                            {% if user.is_authenticated %}
-                                {% if user.is_superuser %}
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Admin Panel</a></li>
-                                {% endif %}
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>My Profile</a></li>
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-sliders me-2"></i>Settings</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-                            {% else %}
-                                <li><a class="dropdown-item" href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right me-2"></i>Login</a></li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
+                        <button type="submit" class="dropdown-item"> <i class="bi bi-box-arrow-right me-2"></i>Logout</button>
+                    </form>
+                </li>
+                <li>
+                    <a href="{% url "change_password" %}" class="dropdown-item">
+                        <i class="bi bi-key me-2"></i> Change Password
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </header>
     {% endif %}
 
-        <!-- Main Content Area -->
-        <div class="main-content">
-            <!-- Messages/Alerts -->
-            <div class="container-fluid mt-3 px-4">
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert" style="background-color: {% if message.tags == 'error' %}#dc3545{% elif message.tags == 'success' %}#28a745{% elif message.tags == 'warning' %}#ffc107{% else %}#0d6efd{% endif %}; color: {% if message.tags == 'warning' %}#343a40{% else %}white{% endif %};">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-
-            <!-- Content Area -->
-            <div class="content">
-                {% block content %}
-                <div class="row justify-content-center align-items-center h-100">
-                    <div class="col-md-6 text-center">
-                        <h2 class="mb-4 fw-bold" style="color: #343a40;">Welcome to Department Inventory</h2>
-                        <p class="lead mb-5" style="color: #6c757d;">Please login to access the system</p>
-                        <a href="{% url 'login' %}" class="btn btn-lg" style="background-color: #0d6efd; color: white; border: none;">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Login
-                        </a>
+    <!-- Main Content Area -->
+    <div class="main-content{% if request.user.is_authenticated %} {% if sidebar_collapsed %} sidebar-collapsed{% endif %}{% endif %}">
+        <!-- Messages/Alerts -->
+        <div class="container-fluid px-3 pt-3" style="margin-top: var(--topbar-height);">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-{% if message.tags == 'error' %}exclamation-circle{% elif message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
-                </div>
-                {% endblock %}
-            </div>
-
-            <!-- Footer -->
-            <footer class="footer">
-                <div class="container-fluid">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <p class="mb-0">© {% now "Y" %} College Department Inventory System</p>
-                        </div>
-                        <div class="col-md-6 text-md-end">
-                            <a href="#" class="text-decoration-none me-3" style="color: #6c757d;"><i class="bi bi-question-circle me-1"></i>Help</a>
-                            <a href="#" class="text-decoration-none me-3" style="color: #6c757d;"><i class="bi bi-envelope me-1"></i>Contact</a>
-                            <a href="#" class="text-decoration-none" style="color: #6c757d;"><i class="bi bi-info-circle me-1"></i>About</a>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+                {% endfor %}
+            {% endif %}
         </div>
+
+        <!-- Content Area -->
+        <div class="content">
+            {% block content %}
+            
+            
+            {% endblock %}
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container-fluid">
+                <div class="row align-items-center g-3">
+                    <div class="col-md-6">
+                        <p class="mb-md-0">© {% now "Y" %} College Department Inventory System</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <a href="#" class="text-decoration-none text-secondary me-3"><i class="bi bi-question-circle me-1"></i>Help</a>
+                        <a href="#" class="text-decoration-none text-secondary me-3"><i class="bi bi-envelope me-1"></i>Contact</a>
+                        <a href="#" class="text-decoration-none text-secondary"><i class="bi bi-info-circle me-1"></i>About</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <!-- Bootstrap JS Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Select DOM elements
             const sidebar = document.querySelector('.sidebar');
             const mainContent = document.querySelector('.main-content');
-            const toggleBtn = document.getElementById('sidebarToggle');
-
-            toggleBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('collapsed');
-                mainContent.classList.toggle('collapsed');
+            const topNavbar = document.querySelector('.top-navbar');
+            const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
+            
+            // Mobile sidebar toggle
+            if (mobileSidebarToggle) {
+                mobileSidebarToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('show');
+                });
+            }
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (event) => {
+                if (window.innerWidth < 768 && 
+                    sidebar.classList.contains('show') && 
+                    !sidebar.contains(event.target) && 
+                    event.target !== mobileSidebarToggle && 
+                    !mobileSidebarToggle.contains(event.target)) {
+                    sidebar.classList.remove('show');
+                }
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                if (window.innerWidth < 768) {
+                    sidebar.classList.remove('show');
+                }
+            });
+            
+            // Theme toggler functionality
+            const themeToggle = document.getElementById('theme-toggle');
+            const lightIcon = document.getElementById('light-icon');
+            const darkIcon = document.getElementById('dark-icon');
+            const htmlElement = document.documentElement;
+            
+            // Check saved theme preference or use system preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                htmlElement.setAttribute('data-bs-theme', savedTheme);
+                if (savedTheme === 'dark') {
+                    lightIcon.classList.add('d-none');
+                    darkIcon.classList.remove('d-none');
+                }
+            }
+            
+            // Theme toggle click handler
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = htmlElement.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                htmlElement.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                
+                if (newTheme === 'dark') {
+                    lightIcon.classList.add('d-none');
+                    darkIcon.classList.remove('d-none');
+                } else {
+                    lightIcon.classList.remove('d-none');
+                    darkIcon.classList.add('d-none');
+                }
             });
         });
     </script>

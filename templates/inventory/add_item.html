@@ -31,8 +31,11 @@
                         Cancel
                     </a>
                     <button type="submit" class="btn btn-primary" style="background-color: #0d6efd; border-color: #0d6efd; color: white; border-radius: 6px; padding: 0.4rem 1.25rem; font-size: 0.9rem;">
-                        <i class="bi bi-check-lg me-1"></i> {% if item.name %}Update{% else %}Add{% endif %}
+                        <i class="bi bi-check-lg me-1"></i> {% if item.name %}Update{% else %} Add {% endif %}
                     </button>
+                    {% comment %} <button type="submit" class="btn btn-primary" style="background-color: #0d6efd; border-color: #0d6efd; color: white; border-radius: 6px; padding: 0.4rem 1.25rem; font-size: 0.9rem;">
+                        <i class="bi bi-check-lg me-1"></i> {% if not item.name %}Add Next {% endif %}
+                    </button> {% endcomment %}
                 </div>
             </form>
         </div>

@@ -5,56 +5,69 @@
 {% block content %}
 {% load status_filters %}
 <div class="container">
-    <h2 class="mb-4">Request History</h2>
+    <div class="col">
+        <h1 class="h3 mb-0 fw-bold" style="color: #343a40;">Request History</h1>
+        <p class="mb-3 text-muted">View the history of your item requests, including status and processing details.</p>
+    </div>
 
     {% if requests %}
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>Item</th>
-                        <th>Quantity</th>
-                        <th>Status</th>
-                        <th>Requested On</th>
-                        <th>Decision Date</th>
-                        <th>Processed By</th>
-                        <th>Reason</th>
+    <div class="card shadow-sm mb-4">
+        
+        <div class="table-responsive ">
+            <table class="table table-hover mb-0 ">
+                <thead>
+                    <tr class="table-light">
+                        <th scope="col" class="text-center">#</th>
+                        <th scope="col">Item</th>
+                        <th scope="col" class="text-center">Qty</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Requested On</th>
+                        <th scope="col">Decision Date</th>
+                        <th scope="col">Processed By</th>
+                        <th scope="col">Reason</th>
                         {% if not user.is_faculty %}
-                        <th>Requested By</th>
+                        <th scope="col">Requested By</th>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody>
                     {% for req in requests %}
                         <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ req.item.name }}</td>
-                            <td>{{ req.quantity }}</td>
+                            <td class="text-center">{{ forloop.counter }}</td>
+                            <td class="fw-medium">{{ req.item.name }}</td>
+                            <td class="text-center">{{ req.quantity }}</td>
                             <td>
-                                <span class="badge bg-{{ req.status|get_status_color }}">
+                                <span class="badge bg-{{ req.status|get_status_color }} rounded-pill text-white">
                                     {{ req.status|capfirst }}
                                 </span>
                             </td>
-                            <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
-                            <td>{{ req.decision_date|date:"Y-m-d H:i" }}</td>
-                            {% if req.processed_by  %}
-                                <td>{{ req.processed_by.username}}</td>
-                            {% else %}
-                                <td>-</td>
-                            {% endif %}
-                            
+                            <td><small>{{ req.request_date|date:"Y-m-d H:i" }}</small></td>
+                            <td><small>{{ req.decision_date|date:"Y-m-d H:i" }}</small></td>
+                            <td>
+                                {% if req.processed_by %}
+                                    <span class="text-body">{{ req.processed_by.username }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
                             <td style="max-width: 300px; white-space: normal; word-break: break-word;">
-                                {{ req.reason|default:"—" }}
+                                <small class="text-secondary">{{ req.reason|default:"—" }}</small>
                             </td>
                             {% if not user.is_faculty %}
                             <td>{{ req.user.username }}</td>
                             {% endif %}
                         </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="{% if not user.is_faculty %}9{% else %}8{% endif %}" class="text-center py-4 text-muted">
+                                No requests found.
+                            </td>
+                        </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+    </div>
     {% else %}
         <p class="text-muted">No item requests found.</p>
     {% endif %}

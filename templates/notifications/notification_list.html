@@ -1,20 +1,34 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mt-4">
-    <h2>Notifications</h2>
+<div class="container">
+    <div class="col">
+        <h1 class="h3 mb-0 fw-bold" style="color: #343a40;">Notifications</h1>
+        <p class="text-muted">All your notifications are listed below.</p>
+    </div>
+
     <a href="{% url 'mark_all_read' %}" class="btn btn-sm btn-outline-secondary mb-3">Mark All as Read</a>
 
-    <ul class="list-group">
-        {% for note in notifications %}
-        <li class="list-group-item {% if not note.is_read %}list-group-item-info{% endif %}">
-            <div class="d-flex justify-content-between">
-                <span>{{ note.message }}</span>
-                <small class="text-muted">{{ note.created_at }}</small>
-            </div>
-        </li>
-        {% empty %}
-        <li class="list-group-item text-muted">No notifications.</li>
-        {% endfor %}
-    </ul>
+    <div class="card shadow-sm">
+        
+        <ul class="list-group list-group-flush">
+          {% for note in notifications %}
+            <li class="list-group-item {% if not note.is_read %}list-group-item-info{% endif %} border-start-0 border-end-0">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <p class="mb-0">{{ note.message }}</p>
+                  {% if not note.is_read %}
+                    <span class="badge bg-primary rounded-pill">New</span>
+                  {% endif %}
+                </div>
+                <small class="text-muted fw-light">{{ note.created_at }}</small>
+              </div>
+            </li>
+          {% empty %}
+            <li class="list-group-item text-center py-3 text-muted">
+              <i class="bi bi-bell-slash me-2"></i>No notifications at this time
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
 </div>
 {% endblock %}

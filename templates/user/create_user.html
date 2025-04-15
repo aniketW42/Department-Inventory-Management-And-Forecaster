@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Create User{% endblock %}
+{% block content %} 
+<div class="container mb-4">
+    <h1 class="h3 mb-4 fw-bold">Create User</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+
+            <label for="group" class="form-label">Group</label>
+            <select class="form-select" id="group" name="group" required>
+                <option value="" disabled selected>Select Group</option>
+                <option value="Faculty">Faculty</option>
+                <option value="Clerk">Clerk</option>
+            </select>
+
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+            
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+
+            <label for"password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Create User</button>
+    </form>
+{% endblock %}

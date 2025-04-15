@@ -1,0 +1,17 @@
+Hello {{ username }},
+
+Your account for the College Department Inventory Management System has been successfully created.
+
+Here are your login credentials:
+
+Username: {{ username }}
+Password: {{ password }}
+
+Please log in to the system and change your password after the first login for security purposes.
+
+Login URL: http://127.0.0.1:8000/login/
+
+If you did not expect this email, please contact the system administrator.
+
+Regards,  
+Inventory System Admin

@@ -1,10 +1,10 @@
-from django.urls import path, include
+from django.urls import path
 from .views import *
 urlpatterns = [
     path('', home, name='home'),
     # path('request-item/<int:item_id>/', request_item, name='request_item'),
 
-    path('faculty/dashboard/', faculty_dashboard, name='faculty_dashboard'),
+    path('faculty-dashboard/', faculty_dashboard, name='faculty_dashboard'),
     path('clerk-dashboard/', clerk_dashboard, name='clerk_dashboard'),
     path('hod-dashboard/', hod_dashboard, name='hod_dashboard'),
     path('logout/', logout_page, name='logout'),
@@ -23,5 +23,7 @@ urlpatterns = [
     path('request-item/', request_item_page, name='request_item'),
     path('submit-request/', submit_item_request, name='request_item_submit'),
     path('categories/', category_list, name='category_list'),
-    path('forecast/', inventory_forecast_view, name='inventory_forecast')
+    path('forecast/', inventory_forecast_view, name='inventory_forecast'),
+    path('create-user/', create_user, name='create_user'),
+    path('manage-users/', manage_users, name='manage_users'),
 ]

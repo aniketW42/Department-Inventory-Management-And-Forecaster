@@ -10,7 +10,10 @@ from .utils import is_clerk, is_faculty, is_hod, forecast_usage_from_excel
 from .models import ItemRequest, InventoryItem
 from .forms import InventoryItemForm
 from notifications.utils import notify_user
+from django.contrib.auth.models import User
+import datetime
 import os
+from django.core.mail import send_mail
 
 def home(request):
     if is_clerk(request.user):
@@ -67,6 +70,7 @@ def process_request(request, request_id):
 
             item_request.status = 'approved'
             item_request.processed_by = request.user
+            item_request.decision_date = datetime.now()
             item_request.save()
             notify_user(item_request.user, f"Your request for {item.name} has been approved by {request.user}.")
             clerk_group = Group.objects.get(name='Clerk')
@@ -205,7 +209,7 @@ def add_item(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Item added successfully.")
-            return redirect('inventory_items')
+            return redirect('add_item')
     else:
         form = InventoryItemForm()
     return render(request, 'inventory/add_item.html', {'form': form})
@@ -323,3 +327,76 @@ def predict_usage(request, year):
         'forecast_data': forecast_data,
         'forecast_year': forecast_year
     })
+
+@login_required
+@user_passes_test(is_hod)
+def manage_users(request):
+    users = User.objects.all()
+    return render(request, 'user/manage_users.html', {'users': users})
+
+
+from django.contrib.auth.models import User, Group
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.core.mail import send_mail
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.template.loader import render_to_string
+from .utils import is_hod
+
+@login_required
+@user_passes_test(is_hod)
+def create_user(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        group_name = request.POST.get('group')
+        email = request.POST.get('email')
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username already exists. Please choose a different one.")
+            return redirect('create_user')
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            messages.error(request, "Invalid email address provided.")
+            return redirect('create_user')
+
+        try:
+            # Create user
+            user = User.objects.create_user(username=username, password=password, email=email)
+
+            # Assign group
+            try:
+                group = Group.objects.get(name=group_name)
+                user.groups.add(group)
+            except Group.DoesNotExist:
+                user.delete()  # rollback
+                messages.error(request, f"Group '{group_name}' does not exist.")
+                return redirect('create_user')
+
+            # Send welcome email
+            subject = "Your Inventory System Account"
+            message = render_to_string('emails/account_created_email.txt', {
+                'username': username,
+                'password': password,
+            })
+
+            send_mail(
+                subject,
+                message,
+                'aniketwakte42@gmail.com',
+                [email],
+                fail_silently=False
+            )
+
+            messages.success(request, f"User {username} created successfully and notified by email.")
+            return redirect('home')
+
+        except Exception as e:
+            messages.error(request, f"Error creating user: {e}")
+            return redirect('create_user')
+
+    return render(request, 'user/create_user.html')
