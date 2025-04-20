@@ -65,7 +65,7 @@
                             </td>
                             <td>{{ user.date_joined|date:"Y-m-d" }}</td>
                             <td>
-                                <a href="" class="btn btn-sm btn-outline-primary">View Requests</a>
+                                <a href="{% url "view_requests" user.id %}" class="btn btn-sm btn-outline-primary">View Requests</a>
                             </td>
                             <td class="text-end">
                                 <a href="{% url 'admin:auth_user_change' user.id %}" class="btn btn-sm btn-outline-primary">Edit</a>

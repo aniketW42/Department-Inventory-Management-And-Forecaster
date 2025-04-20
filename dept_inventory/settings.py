@@ -121,3 +121,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'aniketwakte42@gmail.com'           # Replace with provided email
 EMAIL_HOST_PASSWORD = 'fmrq btww ifki tsct'        
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Login URL configuration
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% load sum_filters %}
+{% block title %}Monthly Item Request Report{% endblock %}
+
+{% block content %}
+<div class="container mb-4">
+    <div class="col">
+        <h1 class="h3 mb-0 fw-bold ">Item Request Report</h1>
+        <p class="mb-3 text-muted">Generate inventory item request reports.</p>
+    </div>
+    <div class="card shadow-sm">
+        
+        <div class="card-body">
+            <!-- Filter Form -->
+            <form method="get" class="row g-3 mb-4" >
+                <!-- Report Type Selection -->
+                <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold">Report Type</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="report_type" id="yearly" value="yearly" 
+                               {% if request.GET.report_type == 'yearly' %}checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="yearly">Yearly</label>
+                        
+                        <input type="radio" class="btn-check" name="report_type" id="monthly" value="monthly" 
+                               {% if request.GET.report_type == 'monthly' or not request.GET.report_type %}checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="monthly">Monthly</label>
+                        
+                        <input type="radio" class="btn-check" name="report_type" id="custom" value="custom" 
+                               {% if request.GET.report_type == 'custom' %}checked{% endif %}>
+                        <label class="btn btn-outline-primary" for="custom">Custom Range</label>
+                    </div>
+                </div>
+
+                <!-- Date Selection (changes based on report type) -->
+                <div class="col-md-6 yearly-option" style="{% if request.GET.report_type != 'yearly' %}display: none;{% endif %}">
+                    <label for="year" class="form-label fw-bold">Select Year</label>
+                    <select name="year" id="year" class="form-select form-select-sm shadow-sm" required>
+                        <option value="2020" {% if request.GET.year == '2020' %}selected{% endif %}>2020</option>
+                        <option value="2021" {% if request.GET.year == '2021' %}selected{% endif %}>2021</option>
+                        <option value="2022" {% if request.GET.year == '2022' %}selected{% endif %}>2022</option>
+                        <option value="2023" {% if request.GET.year == '2023' %}selected{% endif %}>2023</option>
+                        <option value="2024" {% if request.GET.year == '2024' %}selected{% endif %}>2024</option>
+                        <option value="2025" {% if request.GET.year == '2025' %}selected{% endif %}>2025</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 monthly-option" style="{% if request.GET.report_type == 'yearly' or request.GET.report_type == 'custom' %}display: none;{% endif %}">
+                    <label for="month" class="form-label fw-bold">Select Month</label>
+                    <input type="month" name="month" class="form-control form-control-sm shadow-sm"
+                           id="month" value="{{ request.GET.month }}" required>
+                </div>
+
+                <div class="row g-3 custom-range-option" style="{% if request.GET.report_type != 'custom' %}display: none;{% endif %}">
+                    <div class="col-md-6">
+                        <label for="start_date" class="form-label fw-bold ">Start Date</label>
+                        <input type="date" name="start_date" class="form-control form-control-sm shadow-sm"
+                               id="start_date" value="{{ request.GET.start_date }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="end_date" class="form-label fw-bold">End Date</label>
+                        <input type="date" name="end_date" class="form-control form-control-sm shadow-sm"
+                               id="end_date" value="{{ request.GET.end_date }}" required>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="item" class="form-label fw-bold">Item Name</label>
+                    <input type="text" name="item" class="form-control form-control-sm shadow-sm"
+                           value="{{ request.GET.item }}" placeholder="Enter item name">
+                </div>
+                <div class="col-md-4">
+                    <label for="status" class="form-label fw-bold">Status</label>
+                    <select name="status" class="form-select form-select-sm shadow-sm">
+                        <option value="">All</option>
+                        {% for s in status_choices %}
+                            <option value="{{ s }}" {% if request.GET.status == s %}selected{% endif %}>
+                                {{ s|capfirst }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="user" class="form-label fw-bold">Requested By</label>
+                    <input type="text" name="user" class="form-control form-control-sm shadow-sm"
+                           value="{{ request.GET.user }}" placeholder="Enter username">
+                </div>
+            
+                <div class="col-12 d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search me-1"></i> Generate Report
+                    </button>
+            
+                    {% if requests %}
+                    <a href="{% url 'export_request_report' %}?format=csv&report_type={{ request.GET.report_type }}&year={{ request.GET.year }}&month={{ request.GET.month }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}&item={{ request.GET.item }}&status={{ request.GET.status }}&user={{ request.GET.user }}" class="btn btn-success ms-2">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Export as CSV
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+            
+            <div class="alert alert-light border-start border-1 border-primary mt-3">
+                <p class="mb-0"><strong>Total Requests:</strong> {{ requests|length }}</p>
+            </div>
+
+            {% comment %} {% if %} {% endcomment %}
+                <div class="d-flex align-items-center mb-3">
+                    <h5 class="mb-0">Report for: <span class="badge bg-secondary">{{ selected_period }}</span></h5>
+                </div>
+
+                {% if requests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped table-bordered align-middle">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th scope="col" class="text-center">#</th>
+                                    <th scope="col">Item</th>
+                                    <th scope="col">Requested By</th>
+                                    <th scope="col" class="text-center">Quantity</th>
+                                    <th scope="col" class="text-center">Status</th>
+                                    <th scope="col">Request Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in requests %}
+                                <tr>
+                                    <td class="text-center">{{ forloop.counter }}</td>
+                                    <td class="fw-medium">{{ req.item.name }}</td>
+                                    <td>{{ req.user.username }}</td>
+                                    <td class="text-center">{{ req.quantity }}</td>
+                                    <td class="text-center">
+                                        {% if req.status == 'pending' %}
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        {% elif req.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif req.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% else %}
+                                            <span class="badge bg-{{ req.status }}">{{ req.status|capfirst }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i> No requests found for this period and filter.
+                    </div>
+                {% endif %}
+            {% comment %} {% endif %} {% endcomment %}
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript to handle form field visibility based on report type -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const yearlyRadio = document.getElementById('yearly');
+        const monthlyRadio = document.getElementById('monthly');
+        const customRadio = document.getElementById('custom');
+    
+        const yearlyOption = document.querySelector('.yearly-option');
+        const monthlyOption = document.querySelector('.monthly-option');
+        const customRangeOption = document.querySelector('.custom-range-option');
+    
+        const yearSelect = document.getElementById('year');
+        const monthInput = document.getElementById('month');
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+    
+        // Watch for changes
+        yearlyRadio.addEventListener('change', updateFormFields);
+        monthlyRadio.addEventListener('change', updateFormFields);
+        customRadio.addEventListener('change', updateFormFields);
+    
+        updateFormFields(); // On load
+    
+        function updateFormFields() {
+            yearlyOption.style.display = 'none';
+            monthlyOption.style.display = 'none';
+            customRangeOption.style.display = 'none';
+    
+            if (yearlyRadio.checked) {
+                yearlyOption.style.display = 'block';
+                monthInput.value = '';
+                startDateInput.value = '';
+                endDateInput.value = '';
+            }
+    
+            if (monthlyRadio.checked) {
+                monthlyOption.style.display = 'block';
+                yearSelect.value = '';
+                startDateInput.value = '';
+                endDateInput.value = '';
+            }
+    
+            if (customRadio.checked) {
+                customRangeOption.style.display = 'flex';
+                yearSelect.value = '';
+                monthInput.value = '';
+            }
+        }
+    });
+    </script>
+    
+{% endblock %}

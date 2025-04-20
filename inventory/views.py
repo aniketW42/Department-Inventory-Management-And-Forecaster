@@ -14,6 +14,7 @@ from django.contrib.auth.models import User
 import datetime
 import os
 from django.core.mail import send_mail
+from datetime import datetime
 
 def home(request):
     if is_clerk(request.user):
@@ -43,9 +44,15 @@ def login_page(request):
     return render(request, 'user/login.html')
 
 @login_required
-def view_requests(request):
+def view_all_requests(request):
     requests = ItemRequest.objects.all().order_by('-request_date')
     return render(request, 'requests/view_requests.html', {'requests': requests})
+
+@login_required
+def view_requests(request, user_id):
+    requests = ItemRequest.objects.filter( user__id = user_id )
+    return render(request, 'requests/view_requests.html', {'requests': requests})
+
 
 @user_passes_test(is_hod or is_clerk)
 def manage_requests(request):
@@ -148,9 +155,20 @@ def hod_dashboard(request):
 def faculty_dashboard(request):
     items = InventoryItem.objects.all()
     my_requests = ItemRequest.objects.filter(user=request.user).order_by('-request_date')
+
+    # Pagination for items
+    items_paginator = Paginator(items, 100)  # Show 10 items per page
+    items_page_number = request.GET.get('items_page')
+    items_page = items_paginator.get_page(items_page_number)
+
+    # Pagination for my_requests
+    requests_paginator = Paginator(my_requests, 100)  # Show 10 requests per page
+    requests_page_number = request.GET.get('requests_page')
+    requests_page = requests_paginator.get_page(requests_page_number)
+
     return render(request, 'dashboard/faculty_dashboard.html', {
-        'items': items,
-        'my_requests': my_requests
+        'items': items_page,
+        'my_requests': requests_page
     })
 
 @login_required
@@ -400,3 +418,120 @@ def create_user(request):
             return redirect('create_user')
 
     return render(request, 'user/create_user.html')
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.db.models.functions import TruncMonth
+from django.db.models import Count
+from .models import ItemRequest
+import calendar
+from django.utils.dateparse import parse_date
+from datetime import datetime
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from inventory.models import ItemRequest
+from django.utils.dateparse import parse_date
+from django.db.models import Q
+import calendar
+
+@login_required
+def item_request_report(request):
+    report_type = request.GET.get('report_type', 'monthly')
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    item = request.GET.get('item')
+    status = request.GET.get('status')
+    user = request.GET.get('user')
+
+    queryset = None
+    selected_period = ""
+
+    # Report type logic
+    if report_type == 'yearly' and year:
+        queryset = ItemRequest.objects.filter(request_date__year=year).order_by('request_date')
+        selected_period = f"Year {year}"
+
+    elif report_type == 'monthly' and month:
+        try:
+            year_val, month_val = map(int, month.split('-'))
+            queryset = ItemRequest.objects.filter(request_date__year=year_val, request_date__month=month_val).order_by('request_date')
+            selected_period = f"{calendar.month_name[month_val]} {year_val}"
+        except Exception:
+            selected_period = "Invalid month"
+
+    elif report_type == 'custom' and start_date and end_date:
+        try:
+            start = parse_date(start_date)
+            end = parse_date(end_date)
+            if start and end:
+                queryset = ItemRequest.objects.filter(request_date__date__range=(start, end)).order_by('request_date')
+                selected_period = f"{start.strftime('%b %d, %Y')} - {end.strftime('%b %d, %Y')}"
+        except Exception:
+            selected_period = "Invalid custom range"
+
+    # Apply filters
+    if item:
+        queryset = queryset.filter(item__name__icontains=item).order_by('request_date')
+    if status:
+        queryset = queryset.filter(status=status).order_by('request_date')
+    if user:
+        queryset = queryset.filter(user__username__icontains=user).order_by('request_date')
+
+    status_choices = ['pending', 'approved', 'rejected', 'issued', 'returned']
+
+    return render(request, 'reports/item_request_report.html', {
+        'requests': queryset,
+        'selected_period': selected_period,
+        'status_choices': status_choices,
+    })
+
+
+import csv
+from django.http import HttpResponse
+from .models import ItemRequest
+from django.core.paginator import Paginator
+
+@login_required
+def export_request_report(request):
+    format = request.GET.get('format', 'csv')
+    month = request.GET.get('month')
+    item = request.GET.get('item')
+    status = request.GET.get('status')
+    user = request.GET.get('user')
+
+    year, month_number = map(int, month.split('-'))
+    queryset = ItemRequest.objects.filter(
+        request_date__year=year,
+        request_date__month=month_number
+    )
+
+    if item:
+        queryset = queryset.filter(item__name__icontains=item)
+    if status:
+        queryset = queryset.filter(status=status)
+    if user:
+        queryset = queryset.filter(user__username__icontains=user)
+
+    if format == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="item_request_report.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Item', 'User', 'Quantity', 'Status', 'Request Date'])
+
+        for req in queryset:
+            writer.writerow([
+                req.item.name,
+                req.user.username,
+                req.quantity,
+                req.status,
+                req.request_date.strftime("%Y-%m-%d %H:%M")
+            ])
+        return response
+
+    # Future: handle PDF here
+
+    return HttpResponse("Invalid format", status=400)

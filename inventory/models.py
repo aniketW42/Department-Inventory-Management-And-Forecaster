@@ -39,13 +39,13 @@ class ItemRequest(models.Model):
     item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    request_date = models.DateTimeField(auto_now_add=True)
+    request_date = models.DateTimeField(auto_now_add=False)
     decision_date = models.DateTimeField(null=True, blank=True)
     return_date = models.DateTimeField(null=True, blank=True)
     reason = models.TextField(blank=True, null=True)
     processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="processor")
     def __str__(self):
-        return f"{self.user.username} - {self.item.name} ({self.status})"
+        return f"{self.user.username} - {self.item.name} - {self.request_date.month},{self.request_date.year} ({self.status})"
 
 class MaintenanceRequest(models.Model):
     item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE)

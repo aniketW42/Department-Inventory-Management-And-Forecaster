@@ -11,7 +11,8 @@ urlpatterns = [
     path('login/', login_page, name='login'),
     path('manage-requests/', manage_requests, name='manage_requests'),
     path('process-request/<int:request_id>/', process_request, name='process_request'),
-    path('view-requests/', view_requests, name='view_requests'),
+    path('view-all-requests/', view_all_requests, name='view_all_requests'),
+    path('view_requests/<int:user_id>', view_requests, name='view_requests' ),
     path('request-history/', request_history, name='request_history'),
     path('issue-items/', issue_items, name='issue_items'),
     path('issue-items/<int:request_id>/mark/', mark_as_issued, name='mark_as_issued'),
@@ -26,4 +27,9 @@ urlpatterns = [
     path('forecast/', inventory_forecast_view, name='inventory_forecast'),
     path('create-user/', create_user, name='create_user'),
     path('manage-users/', manage_users, name='manage_users'),
+    # path('reports/', view_reports, name='view_reports'),
+    path('item-request-report/', item_request_report, name='item_request_report'),
+    path('export-request-report/', export_request_report, name='export_request_report'),
+
+
 ]
