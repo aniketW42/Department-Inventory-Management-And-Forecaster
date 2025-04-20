@@ -446,7 +446,7 @@ def item_request_report(request):
     status = request.GET.get('status')
     user = request.GET.get('user')
 
-    queryset = None
+    queryset = ItemRequest.objects.none()
     selected_period = ""
 
     # Report type logic
@@ -467,11 +467,11 @@ def item_request_report(request):
             start = parse_date(start_date)
             end = parse_date(end_date)
             if start and end:
-                queryset = ItemRequest.objects.filter(request_date__date__range=(start, end)).order_by('request_date')
+                queryset = ItemRequest.objects.filter(request_date__range=(start, end)).order_by('request_date')
                 selected_period = f"{start.strftime('%b %d, %Y')} - {end.strftime('%b %d, %Y')}"
         except Exception:
             selected_period = "Invalid custom range"
-
+    # print(selected_period)
     # Apply filters
     if item:
         queryset = queryset.filter(item__name__icontains=item).order_by('request_date')

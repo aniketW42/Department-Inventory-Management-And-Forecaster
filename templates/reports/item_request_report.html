@@ -18,11 +18,11 @@
                     <label class="form-label fw-bold">Report Type</label>
                     <div class="btn-group w-100" role="group">
                         <input type="radio" class="btn-check" name="report_type" id="yearly" value="yearly" 
-                               {% if request.GET.report_type == 'yearly' %}checked{% endif %}>
+                               {% if request.GET.report_type == 'yearly' or not request.GET.report_type %}checked{% endif %}>
                         <label class="btn btn-outline-primary" for="yearly">Yearly</label>
                         
                         <input type="radio" class="btn-check" name="report_type" id="monthly" value="monthly" 
-                               {% if request.GET.report_type == 'monthly' or not request.GET.report_type %}checked{% endif %}>
+                               {% if request.GET.report_type == 'monthly' or request.GET.report_type is None %}checked{% endif %}>
                         <label class="btn btn-outline-primary" for="monthly">Monthly</label>
                         
                         <input type="radio" class="btn-check" name="report_type" id="custom" value="custom" 
@@ -156,53 +156,49 @@
 
 <!-- JavaScript to handle form field visibility based on report type -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const yearlyRadio = document.getElementById('yearly');
-        const monthlyRadio = document.getElementById('monthly');
-        const customRadio = document.getElementById('custom');
+    document.addEventListener('DOMContentLoaded', function () {
+        const radios = document.querySelectorAll('input[name="report_type"]');
+        const yearField = document.getElementById('year');
+        const monthField = document.getElementById('month');
+        const startField = document.getElementById('start_date');
+        const endField = document.getElementById('end_date');
     
-        const yearlyOption = document.querySelector('.yearly-option');
-        const monthlyOption = document.querySelector('.monthly-option');
-        const customRangeOption = document.querySelector('.custom-range-option');
+        function updateFields() {
+            const type = document.querySelector('input[name="report_type"]:checked').value;
     
-        const yearSelect = document.getElementById('year');
-        const monthInput = document.getElementById('month');
-        const startDateInput = document.getElementById('start_date');
-        const endDateInput = document.getElementById('end_date');
+            // Reset visibility
+            document.querySelector('.yearly-option').style.display = 'none';
+            document.querySelector('.monthly-option').style.display = 'none';
+            document.querySelector('.custom-range-option').style.display = 'none';
     
-        // Watch for changes
-        yearlyRadio.addEventListener('change', updateFormFields);
-        monthlyRadio.addEventListener('change', updateFormFields);
-        customRadio.addEventListener('change', updateFormFields);
+            // Remove all required
+            yearField.required = false;
+            monthField.required = false;
+            startField.required = false;
+            endField.required = false;
     
-        updateFormFields(); // On load
-    
-        function updateFormFields() {
-            yearlyOption.style.display = 'none';
-            monthlyOption.style.display = 'none';
-            customRangeOption.style.display = 'none';
-    
-            if (yearlyRadio.checked) {
-                yearlyOption.style.display = 'block';
-                monthInput.value = '';
-                startDateInput.value = '';
-                endDateInput.value = '';
-            }
-    
-            if (monthlyRadio.checked) {
-                monthlyOption.style.display = 'block';
-                yearSelect.value = '';
-                startDateInput.value = '';
-                endDateInput.value = '';
-            }
-    
-            if (customRadio.checked) {
-                customRangeOption.style.display = 'flex';
-                yearSelect.value = '';
-                monthInput.value = '';
+            // Set relevant section
+            if (type === 'yearly') {
+                document.querySelector('.yearly-option').style.display = 'block';
+                yearField.required = true;
+            } else if (type === 'monthly') {
+                document.querySelector('.monthly-option').style.display = 'block';
+                monthField.required = true;
+            } else if (type === 'custom') {
+                document.querySelector('.custom-range-option').style.display = 'flex';
+                startField.required = true;
+                endField.required = true;
             }
         }
+    
+        radios.forEach(radio => {
+            radio.addEventListener('change', updateFields);
+        });
+    
+        // Initial setup
+        updateFields();
     });
     </script>
+    
     
 {% endblock %}
