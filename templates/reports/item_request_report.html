@@ -134,8 +134,12 @@
                                             <span class="badge bg-success">Approved</span>
                                         {% elif req.status == 'rejected' %}
                                             <span class="badge bg-danger">Rejected</span>
+                                        {% elif req.status == 'issued' %}
+                                            <span class="badge bg-primary">Issued</span>
+                                        {% elif req.status == 'returned' %}
+                                            <span class="badge bg-secondary">Returned</span>
                                         {% else %}
-                                            <span class="badge bg-{{ req.status }}">{{ req.status|capfirst }}</span>
+                                            {% comment %} <span class="badge bg-{{ req.status }}">{{ req.status|capfirst }}</span> {% endcomment %}
                                         {% endif %}
                                     </td>
                                     <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>

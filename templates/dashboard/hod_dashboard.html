@@ -243,12 +243,21 @@
     new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: ['Pending', 'Approved', 'Rejected'],
+        labels: ['Pending', 'Approved', 'Rejected', 'Issued', 'Returned'],
         datasets: [{
           data: [{% if pending_requests %}{{ pending_requests }}{% else %}0{% endif %}, 
                  {% if approved_requests %}{{ approved_requests }}{% else %}0{% endif %}, 
-                 {% if rejected_requests %}{{ rejected_requests }}{% else %}0{% endif %}],
-          backgroundColor: ['#ffc107', '#198754', '#dc3545'],
+                 {% if rejected_requests %}{{ rejected_requests }}{% else %}0{% endif %},
+                 {% if issued_requests %}{{ issued_requests }}{% else %}0{% endif %},
+                 {% if returned_requests %}{{ returned_requests }}{% else %}0{% endif %},
+                ],
+          backgroundColor: [
+          '#ffc107',  // Pending - Yellow
+          '#198754',  // Approved - Green
+          '#dc3545',  // Rejected - Red
+          '#0d6efd',  // Issued - Blue
+          '#6f42c1'   // Returned - Purple
+          ],
           borderWidth: 0
         }]
       },

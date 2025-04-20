@@ -138,6 +138,8 @@ def hod_dashboard(request):
     pending_requests = ItemRequest.objects.filter(status='pending').count()
     approved_requests = ItemRequest.objects.filter(status='approved').count()
     rejected_requests = ItemRequest.objects.filter(status='rejected').count()
+    issued_requests = ItemRequest.objects.filter(status='issued').count()
+    returned_requests = ItemRequest.objects.filter(status='returned').count()
 
     recent_requests = ItemRequest.objects.all().order_by('-request_date')[:5]
 
@@ -146,6 +148,8 @@ def hod_dashboard(request):
         'pending_requests': pending_requests,
         'approved_requests': approved_requests,
         'rejected_requests': rejected_requests,
+        'issued_requests':issued_requests,
+        'returned_requests':returned_requests,
         'recent_requests': recent_requests,
     }
     return render(request, 'dashboard/hod_dashboard.html', context)
@@ -535,3 +539,29 @@ def export_request_report(request):
     # Future: handle PDF here
 
     return HttpResponse("Invalid format", status=400)
+
+
+@login_required
+def reports(request):
+    approved_count = ItemRequest.objects.filter(status='approved').count()
+    pending_count = ItemRequest.objects.filter(status='pending').count()
+    rejected_count = ItemRequest.objects.filter(status='rejected').count()
+    issued_count = ItemRequest.objects.filter(status='issued').count()
+    returned_count = ItemRequest.objects.filter(status='returned').count()
+
+    in_stock_count = InventoryItem.objects.filter(quantity__gt=10).count()
+    low_stock_count = InventoryItem.objects.filter(quantity__gt=0, quantity__lte=10).count()
+    out_of_stock_count = InventoryItem.objects.filter(quantity=0).count()
+
+    context = {
+        'approved_count': approved_count,
+        'pending_count': pending_count,
+        'rejected_count': rejected_count,
+        'issued_count' : issued_count,
+        'returned_count': returned_count,
+        'in_stock_count': in_stock_count,
+        'low_stock_count': low_stock_count,
+        'out_of_stock_count': out_of_stock_count,
+    }
+
+    return render(request, 'reports/reports.html', context)

@@ -27,7 +27,7 @@ urlpatterns = [
     path('forecast/', inventory_forecast_view, name='inventory_forecast'),
     path('create-user/', create_user, name='create_user'),
     path('manage-users/', manage_users, name='manage_users'),
-    # path('reports/', view_reports, name='view_reports'),
+    path('reports/', reports, name='reports'),
     path('item-request-report/', item_request_report, name='item_request_report'),
     path('export-request-report/', export_request_report, name='export_request_report'),
 
