@@ -15,6 +15,8 @@ import datetime
 import os
 from django.core.mail import send_mail
 from datetime import datetime
+from django.core.paginator import Paginator
+
 
 def home(request):
     if is_clerk(request.user):
@@ -116,9 +118,10 @@ def clerk_dashboard(request):
     total_items = InventoryItem.objects.count()
     low_stock_items = InventoryItem.objects.filter(quantity__lt=5).count()  # Adjust threshold
     pending_requests = ItemRequest.objects.filter(user=request.user, status='pending').count()
-    issued_items = ItemRequest.objects.filter(user=request.user, status='issued').count()
+    issued_items = ItemRequest.objects.filter( status='issued').count()
 
     recent_requests = ItemRequest.objects.filter().order_by('-request_date')[:5]
+    recent_approved_requests = ItemRequest.objects.filter(status = 'approved').order_by('-request_date')[:5]
 
     context = {
         'total_items': total_items,
@@ -126,6 +129,7 @@ def clerk_dashboard(request):
         'pending_requests': pending_requests,
         'issued_items': issued_items,
         'recent_requests': recent_requests,
+        'recent_approved_requests':recent_approved_requests
     }
     return render(request, 'dashboard/clerk_dashboard.html', context)
 
@@ -185,17 +189,21 @@ def issue_items(request):
 @user_passes_test(is_clerk)
 @require_POST
 def mark_as_issued(request, request_id):
-    item_request = get_object_or_404(ItemRequest, id=request_id, status='Approved')
-
-    item_request.status = 'Issued'
+    item_request = get_object_or_404(ItemRequest, id=request_id, status='approved')
+    item_request.status = 'issued'
     item_request.save()
     messages.success(request, "Item marked as issued.")
-    return redirect('issue_items')  
+    return redirect('clerk_dashboard')  
 
 @login_required
 def show_all_items(request):
     items = InventoryItem.objects.all()
 
+    paginator = Paginator(items, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    
     in_stock_items = items.filter(quantity__gte=5).count()   # Only items with good stock
     low_stock_items = items.filter(quantity__gt=0, quantity__lt=10).count()
     out_of_stock_items = items.filter(quantity=0).count()
@@ -207,7 +215,7 @@ def show_all_items(request):
     }
     categories = InventoryItem.CATEGORY_CHOICES
     return render(request, 'inventory/show_all_items.html', {
-        'items': items,
+        'items': page_obj,
         'stock_info': stock_info,
         'categories': categories,
     })
@@ -234,7 +242,7 @@ def add_item(request):
             return redirect('add_item')
     else:
         form = InventoryItemForm()
-    return render(request, 'inventory/add_item.html', {'form': form})
+    return render(request, 'inventory/add_edit_item.html', {'form': form})
 
 @login_required
 @user_passes_test(is_clerk)
@@ -248,7 +256,7 @@ def edit_item(request, pk):
             return redirect('inventory_items')
     else:
         form = InventoryItemForm(instance=item)
-    return render(request, 'inventory/edit_item.html', {'form': form, 'item': item})
+    return render(request, 'inventory/add_edit_item.html', {'form': form, 'item': item})
 
 
 
@@ -280,18 +288,18 @@ def submit_item_request(request):
         return redirect('home')
     return HttpResponseBadRequest("Invalid request.")
 
-@login_required
-def category_list(request):
-    categories = InventoryItem.CATEGORY_CHOICES
-    if request.method == 'GET':
-        category = request.GET.get('category')
-        if category == 'all':
-            items = InventoryItem.objects.all()
-        else:
-            items = InventoryItem.objects.filter(category=category)
-    else:
-        items = InventoryItem.objects.all()
-    return render(request, 'inventory/show_all_items.html', {'categories': categories, 'items': items})
+# @login_required
+# def category_list(request):
+#     categories = InventoryItem.CATEGORY_CHOICES
+#     if request.method == 'GET':
+#         category = request.GET.get('category')
+#         if category == 'all':
+#             items = InventoryItem.objects.all()
+#         else:
+#             items = InventoryItem.objects.filter(category=category)
+#     else:
+#         items = InventoryItem.objects.all()
+#     return render(request, 'inventory/show_all_items.html', {'categories': categories, 'items': items})
 
 from django.shortcuts import render
 from django.contrib import messages
@@ -496,7 +504,7 @@ def item_request_report(request):
 import csv
 from django.http import HttpResponse
 from .models import ItemRequest
-from django.core.paginator import Paginator
+
 
 @login_required
 def export_request_report(request):

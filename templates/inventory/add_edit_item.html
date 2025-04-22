@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Add Item{% endblock %}
+
+{% block content %}
+<div class="container mb-4">
+    <div class="col">
+        <h1 class="h3 mb-0 fw-bold" style="color: #343a40;">
+            {% if item.name %}Edit Item{% else %}Add Item{% endif %}
+        </h1>
+        {% if item.name %}
+            <p class="mb-3 text-muted">Update the details of an existing item in your inventory.</p>
+        {% else %}
+            <p class="mb-3 text-muted">Add a new item to your inventory with all required details.</p>
+        {% endif %}
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-body p-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show py-2" role="alert">
+                                <small>{{ message }}</small>
+                                <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        {% if form.errors %}
+                            <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+                                <small><strong>Error:</strong> Please correct the errors below.</small>
+                                <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endif %}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.name.label }}</label>
+                                {{ form.name }}
+                                {{ form.name.errors }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.item_type.label }}</label>
+                                {{ form.item_type }}
+                                {{ form.item_type.errors }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.quantity.label }}</label>
+                                {{ form.quantity }}
+                                {{ form.quantity.errors }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.category.label }}</label>
+                                {{ form.category }}
+                                {{ form.category.errors }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.location.label }}</label>
+                                {{ form.location }}
+                                {{ form.location.errors }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">{{ form.reorder_level.label }}</label>
+                                {{ form.reorder_level }}
+                                {{ form.reorder_level.errors }}
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">{{ form.description.label }}</label>
+                                {{ form.description }}
+                                {{ form.description.errors }}
+                            </div>
+
+                            <div class="col-md-6 d-flex align-items-center">
+                                {{ form.needs_maintenance }}
+                                <label class="form-check-label ms-2" for="id_needs_maintenance">
+                                    Needs Maintenance
+                                </label>
+                                {{ form.needs_maintenance.errors }}
+                            </div>
+
+                            <div class="col-md-6" id="maintenance_interval_wrapper" style="display: none;">
+                                <label class="form-label fw-semibold" for="id_maintenance_interval_days">
+                                    Maintenance Interval (in days)
+                                </label>
+                                {{ form.maintenance_interval_days }}
+                                <span class="small text-muted fst-italic" style="font-size: 0.85rem; color: #6c757d;">
+                                    {{ form.maintenance_interval_days.help_text }}
+                                </span>
+                                {{ form.maintenance_interval_days.errors }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'inventory_items' %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-check-lg me-1"></i>
+                                {% if item.name %}Update{% else %}Add{% endif %}
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maintenance JS -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const checkbox = document.getElementById("id_needs_maintenance");
+        const intervalField = document.getElementById("maintenance_interval_wrapper");
+        const intervalInput = document.getElementById("id_maintenance_interval_days");
+
+        function toggleInterval() {
+            if (checkbox.checked) {
+                intervalField.style.display = 'block';
+            } else {
+                intervalField.style.display = 'none';
+                if (intervalInput) intervalInput.value = '';
+            }
+        }
+
+        toggleInterval();
+        checkbox.addEventListener("change", toggleInterval);
+    });
+</script>
+
+<style>
+    .form-control, .form-select {
+        font-size: 0.95rem;
+    }
+    label {
+        font-size: 0.9rem;
+    }
+    .form-check-input {
+        margin-top: 0.3rem;
+    }
+    .btn-primary {
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        background-color: #0a58ca;
+    }
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        color: #fff;
+    }
+</style>
+{% endblock %}

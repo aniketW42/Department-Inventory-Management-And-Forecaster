@@ -22,7 +22,12 @@ class InventoryItem(models.Model):
     location = models.CharField(max_length=100, blank=True)
     reorder_level = models.PositiveIntegerField(default=5)
     date_added = models.DateTimeField(auto_now_add=True)
-
+    needs_maintenance = models.BooleanField(default=False)
+    maintenance_interval_days = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text="Number of days after which maintenance is needed (if applicable)"
+    )
     def __str__(self):
         return self.name
 
