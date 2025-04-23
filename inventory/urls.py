@@ -30,6 +30,7 @@ urlpatterns = [
     path('reports/', reports, name='reports'),
     path('item-request-report/', item_request_report, name='item_request_report'),
     path('export-request-report/', export_request_report, name='export_request_report'),
-
+    path('item-maintenance/', item_maintenance, name='item_maintenance'),
+    
 
 ]

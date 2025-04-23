@@ -28,6 +28,7 @@ class InventoryItem(models.Model):
         null=True,
         help_text="Number of days after which maintenance is needed (if applicable)"
     )
+    last_maintenance_date = models.DateField(null=True, blank=True)
     def __str__(self):
         return self.name
 
@@ -49,6 +50,8 @@ class ItemRequest(models.Model):
     return_date = models.DateTimeField(null=True, blank=True)
     reason = models.TextField(blank=True, null=True)
     processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="processor")
+    issued_date = models.DateTimeField(null=True, blank=True)
+    issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="issuer")
     def __str__(self):
         return f"{self.user.username} - {self.item.name} - {self.request_date.month},{self.request_date.year} ({self.status})"
 

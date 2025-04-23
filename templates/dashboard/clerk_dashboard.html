@@ -23,67 +23,7 @@
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-md-3 col-sm-6">
-            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #0d6efd, #0a58ca);">
-                <div class="card-body text-white">
-                    <h5 class="card-title mb-3 fw-semibold">Total Items</h5>
-                    <p class="card-text fs-2 fw-bold mb-0">{{ total_items }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
-                <div class="card-body text-white">
-                    <h5 class="card-title mb-3 fw-semibold">Low Stock</h5>
-                    <p class="card-text fs-2 fw-bold mb-0">{{ low_stock }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #0d6efd, #0a58ca);">
-                <div class="card-body text-white">
-                    <h5 class="card-title mb-3 fw-semibold">My Pending Requests</h5>
-                    <p class="card-text fs-2 fw-bold mb-0">{{ pending_requests }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6">
-            <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #28a745, #218838);">
-                <div class="card-body text-white">
-                    <h5 class="card-title mb-3 fw-semibold">Issued Items</h5>
-                    <p class="card-text fs-2 fw-bold mb-0">{{ issued_items }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {% comment %} <div class="mt-5">
-        <h4 class="mb-3 fw-bold" style="color: #343a40;"> <i class="bi bi-clock-history me-2 text-primary"></i> Recent Requests</h4>
-        <ul class="list-group shadow-sm" style="background: #f8f9fa;">
-            {% for request in recent_requests %}
-                <li class="list-group-item d-flex justify-content-between align-items-center border-0 border-bottom py-3" style="color: #343a40;">
-                    {{ request.item.name }} ({{ request.quantity }})
-                    
-                    {% if request.status == 'pending' %}
-                        <span class="badge bg-warning text-dark fw-bold">
-                            Pending
-                        </span>
-                    {% elif request.status == 'approved' %}
-                        <span class="badge bg-success fw-bold">
-                            </i>Approved
-                        </span>
-                    {% else %}
-                        <span class="badge bg-danger fw-bold">
-                            Rejected
-                        </span>
-                    {% endif %}
-                </li>
-            {% empty %}
-                <li class="list-group-item border-0 py-3" style="color: #6c757d;">No recent requests.</li>
-            {% endfor %}
-        </ul>
-    </div> {% endcomment %}
+    
 
      <!-- Tabs Section -->
      <div class="mt-4">
@@ -102,7 +42,7 @@
               </li>
               <li class="nav-item">
                 <a class="nav-link py-3 px-4" data-bs-toggle="tab" href="#approved">
-                  <i class="fas fa-check-circle me-2"></i>Approved
+                  <i class="fas fa-check-circle me-2"></i>Approved 
                 </a>
               </li>
             </ul>

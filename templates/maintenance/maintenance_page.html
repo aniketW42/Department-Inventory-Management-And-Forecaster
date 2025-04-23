@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance Items{% endblock %}
+{% load maintenance_filters %}
+{% block content %}
+<div class="container mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="fw-bold">Maintenance Tracker</h2>
+            <p class="text-muted">Track issued items that require maintenance</p>
+        </div>
+        <form id="searchForm" method="get" class="d-flex" style="max-width: 300px;">
+            <input type="text" name="q" class="form-control form-control-sm me-2" placeholder="Search item..." value="{{ request.GET.q }}">
+            <select name="filter" class="form-select form-select-sm me-2">
+                <option value="">All</option>
+                <option value="due" {% if request.GET.filter == 'due' %}selected{% endif %}>Due</option>
+                <option value="overdue" {% if request.GET.filter == 'overdue' %}selected{% endif %}>Overdue</option>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+        </form>
+    </div>
+
+    {% if maintenance_items %}
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item</th>
+                            <th>Issued To</th>
+                            <th>Issued On</th>
+                            <th>Last Maintenance</th>
+                            <th>Interval (Days)</th>
+                            <th>Days Remaining</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="maintenanceTable">
+                        {% for req in maintenance_items %}
+                        <tr>
+                            <td class="fw-semibold">{{ req.item.name }}</td>
+                            <td>{{ req.user.get_full_name|default:req.user.username }}</td>
+                            <td>{{ req.issued_date|date:"Y-m-d" }}</td>
+                            <td>
+                                {% if req.item.last_maintenance_date %}
+                                    {{ req.item.last_maintenance_date|date:"Y-m-d" }}
+                                {% else %}
+                                    <span class="text-muted">Not recorded</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.item.maintenance_interval_days }}</td>
+                            <td>
+                                {% if req.item.last_maintenance_date %}
+                                {% with remaining=req.item.last_maintenance_date|days_until_maintenance:req.item.maintenance_interval_days %}
+                                    {% if remaining >= 0 %}
+                                        <span class="badge bg-info text-dark">{{ remaining }} days</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Overdue</span>
+                                    {% endif %}
+                                {% endwith %}
+                                {% else %}
+                                {% with remaining=req.issued_date|days_until_maintenance:req.item.maintenance_interval_days %}
+                                    {% if remaining >= 0 %}
+                                        <span class="badge bg-info text-dark">{{ remaining }} days</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Overdue</span>
+                                    {% endif %}
+                                {% endwith %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% comment %} <form method="post" action="{% url 'perform_maintenance' req.id %}"> {% endcomment %}
+                                    {% comment %} {% csrf_token %} {% endcomment %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Mark Maintained</button>
+                                {% comment %} </form> {% endcomment %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if maintenance_items.has_other_pages %}
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center">
+            {% if maintenance_items.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?items_page={{ maintenance_items.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {% endif %}
+
+            {% for page_num in maintenance_items.paginator.page_range %}
+            <li class="page-item {% if page_num == maintenance_items.number %}active{% endif %}">
+                <a class="page-link" href="?items_page={{ page_num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}">{{ page_num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if maintenance_items.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?items_page={{ maintenance_items.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-info mt-4">
+        <i class="bi bi-info-circle me-1"></i> No issued maintenance items found.
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .badge {
+        font-size: 0.85rem;
+    }
+    .table th, .table td {
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}

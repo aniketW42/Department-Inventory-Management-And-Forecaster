@@ -25,23 +25,30 @@ class Command(BaseCommand):
             # Generate request_date between 2020-01-01 and 2025-12-31
             request_date = fake.date_time_between(
                 start_date=datetime(2020, 1, 1),
-                end_date=datetime(2025, 12, 31)
+                end_date=datetime(2025, 3, 31)
             )
             
             # If the status is not 'pending', generate decision_date and return_date
             decision_date = fake.date_time_between(
                 start_date=request_date,
-                end_date=datetime(2025, 12, 31)
+                end_date=datetime(2025, 3, 31)
             ) if status != 'pending' else None
+
+            issued_date = fake.date_time_between(
+                start_date=decision_date,
+                end_date=datetime(2025, 3, 31)
+            ) if status == 'issued' else None
             
+            
+
             return_date = fake.date_time_between(
                 start_date=decision_date,
-                end_date=datetime(2025, 12, 31)
+                end_date=datetime(2025, 3, 31)
             ) if status == 'returned' else None
             
             processed_by = random.choice(users) if status != 'pending' else None
             reason = fake.sentence() if status == 'rejected' else ''
-
+            issued_by = random.choice(users) if status != 'issued' else None
             ItemRequest.objects.create(
                 user=user,
                 item=item,
@@ -52,6 +59,8 @@ class Command(BaseCommand):
                 return_date=return_date,
                 processed_by=processed_by,
                 reason=reason,
+                issued_date = issued_date,
+                issued_by = issued_by
             )
 
         self.stdout.write(self.style.SUCCESS('✅ Dummy data created successfully.'))
