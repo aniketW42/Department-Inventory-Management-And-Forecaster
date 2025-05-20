@@ -314,12 +314,12 @@ def submit_item_request(request):
 from django.shortcuts import render
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
-from datetime import datetime
+import datetime
 import os
 
 def inventory_forecast_view(request):
     forecast_results = None
-    forecast_year = [ datetime.now().year + 1, datetime.now().year + 2 ]  # Default to next year
+    forecast_year = [ datetime.datetime.now().year + 1, datetime.now().year + 2 ]  # Default to next year
     year = datetime.now().year + 1  
     if request.method == 'POST' and request.FILES.get('file'):
         uploaded_file = request.FILES['file']
@@ -587,19 +587,7 @@ def reports(request):
 from django.db.models import Q
 from django.utils import timezone
 from django.core.paginator import Paginator
-from datetime import datetime  # Correct import for datetime class
-
-# def item_maintenance(request):
-
-#     issued_items = ItemRequest.objects.filter(status = 'issued').order_by('issued_date')
-    
-#     issued_maintenance_items = issued_items.filter(item__needs_maintenance=True)
-
-#     paginator = Paginator(issued_maintenance_items, 30)
-#     page_number = request.GET.get('items_page')
-#     page_obj = paginator.get_page(page_number)
-
-#     return render(request, 'maintenance/maintenance_page.html', {'maintenance_items' : page_obj})
+import datetime
 
 def item_maintenance(request):
     # Get search query and filter value from GET parameters
@@ -623,7 +611,7 @@ def item_maintenance(request):
     for item in issued_maintenance_items:
         # Ensure last_maintenance_date is a date object
         last_maintenance_date = item.item.last_maintenance_date
-        if last_maintenance_date and isinstance(last_maintenance_date, datetime):
+        if last_maintenance_date and isinstance(last_maintenance_date, datetime.datetime):
             last_maintenance_date = last_maintenance_date.date()
 
         # Initialize is_overdue as False to avoid the "undefined variable" error
@@ -639,7 +627,9 @@ def item_maintenance(request):
             # If there's no last_maintenance_date, calculate based on issued_date
             if item.item.maintenance_interval_days is not None:
                 # Ensure issued_date is a date object (convert to date if it's a datetime object)
-                issued_date = item.issued_date.date() if isinstance(item.issued_date, datetime) else item.issued_date
+                # issued_date = item.issued_date.date() if isinstance(item.issued_date, datetime) else item.issued_date
+                issued_date = item.issued_date.date() if isinstance(item.issued_date, datetime.datetime) else item.issued_date
+
 
                 days_since_issued = (today - issued_date).days
                 is_overdue = days_since_issued > item.item.maintenance_interval_days
@@ -658,3 +648,99 @@ def item_maintenance(request):
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'maintenance/maintenance_page.html', {'maintenance_items': page_obj})
+
+import calendar
+from django.utils.dateparse import parse_date
+
+def inventory_report(request):
+    report_type = request.GET.get('report_type', 'monthly')
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    item = request.GET.get('item')
+
+    queryset = InventoryItem.objects.all()
+    selected_period = ""
+
+    try:
+        if report_type == 'yearly' and year:
+            year_int = int(year)
+            queryset = queryset.filter(date_added__year=year_int)
+            selected_period = f"Year {year_int}"
+        elif report_type == 'monthly' and month:
+            # Expecting month param in 'YYYY-MM' format
+            year_val, month_val = map(int, month.split('-'))
+            queryset = queryset.filter(date_added__year=year_val, date_added__month=month_val)
+            selected_period = f"{calendar.month_name[month_val]} {year_val}"
+        elif report_type == 'custom' and start_date and end_date:
+            start = parse_date(start_date)
+            end = parse_date(end_date)
+            if start and end:
+                queryset = queryset.filter(date_added__date__range=(start, end))
+                selected_period = f"{start.strftime('%b %d, %Y')} - {end.strftime('%b %d, %Y')}"
+            else:
+                selected_period = "Invalid date range"
+        else:
+            # No valid filter - maybe show all or show message
+            selected_period = "All time"
+    except Exception as e:
+        selected_period = f"Invalid filter parameters: {e}"
+
+    if item:
+        queryset = queryset.filter(name__icontains=item)
+
+    if request.GET.get('export') == 'excel':
+        return export_inventory_to_excel(queryset, selected_period)
+
+
+    return render(request, 'reports/inventory_report.html', {
+        'items': queryset,
+        'selected_period': selected_period,
+    })
+
+import io
+import datetime
+from django.http import HttpResponse
+import openpyxl
+from openpyxl.utils import get_column_letter
+
+def export_inventory_to_excel(queryset, selected_period):
+    # Create a workbook and worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Inventory Report"
+
+    # Header row
+    headers = ['#', 'Item', 'Category', 'Quantity', 'Location', 'Date Added']
+    ws.append(headers)
+
+    # Fill rows
+    for idx, item in enumerate(queryset, start=1):
+        ws.append([
+            idx,
+            item.name,
+            item.get_category_display() if hasattr(item, 'get_category_display') else item.category,
+            item.quantity,
+            item.location,
+            item.date_added.strftime('%Y-%m-%d'),
+        ])
+
+    # Set column widths for readability
+    for i, column_cells in enumerate(ws.columns, start=1):
+        max_length = max(len(str(cell.value)) for cell in column_cells)
+        ws.column_dimensions[get_column_letter(i)].width = max_length + 2
+
+    # Save workbook to in-memory file
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    # Create response
+    filename = f"inventory_report_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    response = HttpResponse(
+        output,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename={filename}'
+    return response
