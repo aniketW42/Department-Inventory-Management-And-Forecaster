@@ -28,14 +28,6 @@
                 <button type="submit" class="btn btn-outline-primary">Search</button>
             </form>
         </div>
-        <div class="col-md-6 text-end">
-            <div class="btn-group">
-                <a href="?role=all" class="btn btn-outline-secondary {% if request.GET.role == 'all' or not request.GET.role %}active{% endif %}">All</a>
-                <a href="?role=faculty" class="btn btn-outline-secondary {% if request.GET.role == 'faculty' %}active{% endif %}">Faculty</a>
-                <a href="?role=clerk" class="btn btn-outline-secondary {% if request.GET.role == 'clerk' %}active{% endif %}">Clerk</a>
-                <a href="?role=hod" class="btn btn-outline-secondary {% if request.GET.role == 'hod' %}active{% endif %}">HOD</a>
-            </div>
-        </div>
     </div>
 
     <!-- Users Table -->

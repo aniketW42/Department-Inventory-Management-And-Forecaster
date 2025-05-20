@@ -33,7 +33,9 @@
                             <th>Last Maintenance</th>
                             <th>Interval (Days)</th>
                             <th>Days Remaining</th>
+                            {% if not is_hod %}
                             <th>Action</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody id="maintenanceTable">
@@ -72,7 +74,11 @@
                             <td>
                                 {% comment %} <form method="post" action="{% url 'perform_maintenance' req.id %}"> {% endcomment %}
                                     {% comment %} {% csrf_token %} {% endcomment %}
+                                    {% if is_clerk %}
                                     <button type="submit" class="btn btn-sm btn-outline-success">Mark Maintained</button>
+                                    {% elif is_faculty %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Request for Maintenance</button>
+                                    {% endif%}
                                 {% comment %} </form> {% endcomment %}
                             </td>
                         </tr>
