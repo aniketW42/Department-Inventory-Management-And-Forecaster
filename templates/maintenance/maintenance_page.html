@@ -70,10 +70,10 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% comment %} <form method="post" action="{% url 'perform_maintenance' req.id %}"> {% endcomment %}
-                                    {% comment %} {% csrf_token %} {% endcomment %}
+                                <form method="post" action="{% url 'mark_maintained' req.item.id %}">
+                                    {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-outline-success">Mark Maintained</button>
-                                {% comment %} </form> {% endcomment %}
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}

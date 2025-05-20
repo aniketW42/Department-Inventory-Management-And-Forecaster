@@ -1,5 +1,6 @@
 import pandas as pd
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
+
 def is_clerk(user):
     return user.groups.filter(name='Clerk').exists()
 

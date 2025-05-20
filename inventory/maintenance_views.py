@@ -1,10 +1,13 @@
-from django.shortcuts import render
-from .models import ItemRequest
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import user_passes_test
+from .models import ItemRequest, InventoryItem
 import datetime
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
+from .utils import is_clerk
 
+@user_passes_test(is_clerk)
 def item_maintenance(request):
     # Get search query and filter value from GET parameters
     search_query = request.GET.get('q', '')
@@ -63,3 +66,10 @@ def item_maintenance(request):
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'maintenance/maintenance_page.html', {'maintenance_items': page_obj})
+
+@user_passes_test(is_clerk)
+def mark_maintained(request, item_id):
+    item = get_object_or_404(InventoryItem, id=item_id)
+    item.last_maintenance_date = timezone.now()
+    item.save()
+    return redirect('item_maintenance')

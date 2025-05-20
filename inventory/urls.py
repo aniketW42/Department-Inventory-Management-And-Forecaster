@@ -51,4 +51,5 @@ urlpatterns = [
 
     # Maintenance
     path('item-maintenance/', item_maintenance, name='item_maintenance'),
+    path('mark-maintained/<int:item_id>/', mark_maintained, name='mark_maintained'),
 ]
