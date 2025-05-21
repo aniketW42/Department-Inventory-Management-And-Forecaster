@@ -233,7 +233,7 @@
                 throw new Error(data.error || 'Failed to mark as maintained');
             }
         })
-        .catch(error => {
+        .catch(error => {git 
             // Show error toast with specific message
             errorToast.querySelector('.toast-body').textContent = `Failed to mark item as maintained: ${error.message}`;
             const toast = new bootstrap.Toast(errorToast);
