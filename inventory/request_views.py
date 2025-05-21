@@ -8,6 +8,7 @@ from django.contrib.auth.models import Group
 from .models import InventoryItem, ItemRequest
 from .utils import is_faculty, is_hod, is_clerk
 from notifications.utils import notify_user
+from django.core.paginator import Paginator
 
 @login_required
 def request_item_page(request):
@@ -17,11 +18,18 @@ def request_item_page(request):
 @login_required
 def request_history(request):
     if is_faculty(request.user):
-        requests = ItemRequest.objects.filter(user=request.user).order_by('-request_date')
-    else: 
-        requests = ItemRequest.objects.all().order_by('-request_date')
-    return render(request, 'requests/request_history.html', {'requests': requests})
+        all_requests = ItemRequest.objects.filter(user=request.user).order_by('-request_date')
+    else:
+        all_requests = ItemRequest.objects.all().order_by('-request_date')
 
+    paginator = Paginator(all_requests, 20)  # Show 10 requests per page
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'requests/request_history.html', {
+        'requests': page_obj,
+    })
 
 
 @login_required
@@ -32,8 +40,14 @@ def view_all_requests(request):
 @login_required
 def view_requests(request, user_id):
     requests = ItemRequest.objects.filter( user__id = user_id )
-    return render(request, 'requests/view_requests.html', {'requests': requests})
+   
 
+    paginator = Paginator(requests, 20)  # Show 10 requests per page
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'requests/view_requests.html', {'requests': page_obj})
 
 @user_passes_test(is_hod or is_clerk)
 def manage_requests(request):

@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+{% load dict_filters %}
+{% block content %}
+<style>
+  :root {
+    --primary-color: #3875e8;
+    --primary-hover: #2b64cb;
+    --bg-light: #f8f9fa;
+    --bg-content: #ffffff;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --neutral-color: #6c757d;
+  }
+  
+  body {
+    background-color: var(--bg-light);
+  }
+  
+  .dashboard-header {
+    background-color: var(--bg-content);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .table-container {
+    background-color: var(--bg-content);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin: 0 auto 1.5rem;
+    max-width: 100%;
+  }
+  
+  .table thead th {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    padding: 12px 15px;
+    font-weight: 600;
+  }
+  
+  .table tbody tr:hover {
+    background-color: rgba(56, 117, 232, 0.1);
+  }
+  
+  .table tbody td {
+    vertical-align: middle;
+    padding: 12px 15px;
+  }
+  
+  .forecast-header {
+    background-color: var(--primary-hover);
+    color: white;
+  }
+  
+  .current-stock-cell {
+    background-color: rgba(23, 162, 184, 0.1);
+    border-left: 3px solid var(--info-color);
+  }
+  
+  .forecast-cell {
+    background-color: rgba(56, 117, 232, 0.05);
+    border-left: none;
+  }
+  
+  .order-cell-normal {
+    background-color: rgba(40, 167, 69, 0.1);
+    border-left: 3px solid var(--success-color);
+  }
+  
+  .order-cell-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-left: 3px solid var(--warning-color);
+  }
+  
+  .order-cell-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+    border-left: 3px solid var(--danger-color);
+  }
+  
+  .item-name-cell {
+    font-weight: 600;
+    background-color: rgba(108, 117, 125, 0.05);
+  }
+  
+  .chart-container {
+    height: 300px;
+    margin-bottom: 2rem;
+  }
+  
+  .stats-cards {
+    margin-bottom: 2rem;
+  }
+  
+  .stat-card {
+    background-color: var(--bg-content);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    height: 100%;
+    transition: transform 0.2s;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .stat-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  
+  .stat-label {
+    color: var(--neutral-color);
+    font-size: 0.9rem;
+  }
+  
+  .trend-indicator-up {
+    color: var(--success-color);
+  }
+  
+  .trend-indicator-down {
+    color: var(--danger-color);
+  }
+  
+  .trend-mini {
+    height: 30px;
+    width: 80px;
+    display: inline-block;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  
+  @media (max-width: 768px) {
+    .table-container, .dashboard-header {
+      padding: 1rem;
+    }
+    
+    .table {
+      font-size: 0.9rem;
+    }
+    
+    .stat-card {
+      margin-bottom: 1rem;
+    }
+  }
+</style>
+
+<div class="container">
+  <div class="dashboard-header">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <h1 class="h3 mb-2 fw-bold" style="color: #343a40;">Inventory Forecast Overview</h1>
+        <p class="mb-0 text-muted">This dashboard provides an inventory forecast and highlights items that need to be ordered.</p>
+      </div>
+      
+    </div>
+  </div>
+  
+   <!-- Table -->
+   <div class="table-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">Inventory Details</h5>
+      
+    </div>
+    
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover" id="inventoryTable">
+        <thead>
+          <tr>
+            <th scope="col" style="width: 25%;">Item</th>
+            <th scope="col" style="width: 15%;">Current Stock</th>
+            <th scope="col" style="width: 15%;" class="forecast-header text-center">Forecast ({{ forecast_years_used.0 }})</th>
+            <th scope="col" style="width: 15%;">Need to Order </th>
+            {% comment %} <th scope="col" style="width: 10%;">Trend</th> {% endcomment %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for item_name, forecast in forecast_data.items %}
+            <tr>
+              <td class="item-name-cell">{{ item_name }}</td>
+              <td class="current-stock-cell">{{ current_stock|get_item:item_name|default:"-" }}</td>
+              {% if forecast == "Not enough data" %}
+                <td class="text-muted text-center">{{ forecast }}</td>
+                <td>-</td>
+                <td>-</td>
+              {% else %}
+                {% for year, value in forecast.items %}
+                  <td class="forecast-cell">{{ value }}</td>
+                {% endfor %}
+                
+                {% with order_value=need_to_order|get_item:item_name|default:0 %}
+                  {% if order_value > 50 %}
+                    <td class="order-cell-danger">{{ order_value }}</td>
+                  {% elif order_value > 20 %}
+                    <td class="order-cell-warning">{{ order_value }}</td>
+                  {% else %}
+                    <td class="order-cell-normal">{{ order_value }}</td>
+                  {% endif %}
+                {% endwith %}
+                
+                {% comment %} <td class="text-center">
+                  <canvas class="trend-mini" data-item="{{ item_name }}"></canvas>
+                </td> {% endcomment %}
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% comment %} <!-- Chart Area -->
+  <div class="table-container mb-4">
+    <h5 class="mb-3">Inventory Trend Analysis</h5>
+    <div class="chart-container">
+      <canvas id="inventoryTrendChart"></canvas>
+    </div>
+  </div>
+   {% endcomment %}
+ 
+</div>
+
+<!-- Bootstrap 5 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<!-- Chart.js for visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Sample data for demonstration
+    const itemNames = [];
+    const stockLevels = [];
+    const orderNeeds = [];
+    const trendData = {};
+    
+    // Process data from Django template
+    {% for item_name, forecast in forecast_data.items %}
+      itemNames.push("{{ item_name }}");
+      const currentStock = parseInt("{{ current_stock|get_item:item_name|default:0 }}");
+      stockLevels.push(currentStock);
+      
+      const needToOrder = parseInt("{{ need_to_order|get_item:item_name|default:0 }}");
+      orderNeeds.push(needToOrder);
+      
+      // Sample trend data (would be replaced with actual data in production)
+      trendData["{{ item_name }}"] = [
+        Math.floor(Math.random() * 30 + 70),
+        Math.floor(Math.random() * 30 + 60),
+        Math.floor(Math.random() * 30 + 50),
+        Math.floor(Math.random() * 30 + 40),
+        Math.floor(Math.random() * 30 + 30),
+        currentStock
+      ];
+    {% endfor %}
+    
+    // Count low stock and out of stock items
+    let lowStockCount = 0;
+    let outOfStockCount = 0;
+    
+    stockLevels.forEach(stock => {
+      if(stock === 0) outOfStockCount++;
+      else if(stock < 20) lowStockCount++;
+    });
+    
+    document.getElementById('low-stock-count').textContent = lowStockCount;
+    document.getElementById('out-of-stock-count').textContent = outOfStockCount;
+    
+    // Main chart
+    const ctx = document.getElementById('inventoryTrendChart').getContext('2d');
+    const inventoryChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+        datasets: [
+          {
+            label: 'Average Stock Level',
+            data: [85, 72, 65, 59, 48, 42],
+            borderColor: '#3875e8',
+            backgroundColor: 'rgba(56, 117, 232, 0.1)',
+            tension: 0.4,
+            fill: true
+          },
+          {
+            label: 'Projected Need',
+            data: [30, 35, 40, 45, 50, 55],
+            borderColor: '#dc3545',
+            backgroundColor: 'rgba(220, 53, 69, 0.05)',
+            borderDash: [5, 5],
+            tension: 0.4,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              drawBorder: false
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+    
+    // Mini trend charts
+    const miniTrends = document.querySelectorAll('.trend-mini');
+    miniTrends.forEach(canvas => {
+      const itemName = canvas.getAttribute('data-item');
+      if (trendData[itemName]) {
+        const miniCtx = canvas.getContext('2d');
+        new Chart(miniCtx, {
+          type: 'line',
+          data: {
+            labels: ['', '', '', '', '', ''],
+            datasets: [{
+              data: trendData[itemName],
+              borderColor: '#3875e8',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                enabled: false
+              }
+            },
+            scales: {
+              x: {
+                display: false
+              },
+              y: {
+                display: false
+              }
+            }
+          }
+        });
+      }
+    });
+    
+    // Search functionality
+    document.getElementById('tableSearch').addEventListener('keyup', function() {
+      const searchTerm = this.value.toLowerCase();
+      const tableRows = document.querySelectorAll('#inventoryTable tbody tr');
+      
+      tableRows.forEach(row => {
+        const itemName = row.querySelector('td:first-child').textContent.toLowerCase();
+        if (itemName.includes(searchTerm)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
+
+{% endblock content %}

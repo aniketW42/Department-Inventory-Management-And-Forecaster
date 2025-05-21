@@ -2,11 +2,12 @@
 
 {% block title %}Maintenance Items{% endblock %}
 {% load maintenance_filters %}
+{% load auth_extras %}
 {% block content %}
 <div class="container mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h2 class="fw-bold">Maintenance Tracker</h2>
+            <h3 class="fw-bold">Maintenance Tracker</h3>
             <p class="text-muted">Track issued items that require maintenance</p>
         </div>
         <form id="searchForm" method="get" class="d-flex" style="max-width: 300px;">
@@ -19,6 +20,49 @@
             <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
         </form>
     </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="maintenanceToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle me-2"></i> Item maintenance has been successfully recorded.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+        <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-exclamation-circle me-2"></i> Failed to mark item as maintained.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="maintenanceModal" tabindex="-1" aria-labelledby="maintenanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="maintenanceModalLabel">Confirm Maintenance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to mark this item as maintained?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="confirmMaintenanceBtn">Yes, Mark as Maintained</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hidden field to store item ID and CSRF token -->
+    <input type="hidden" id="maintenanceItemId" value="">
+    {% csrf_token %}
 
     {% if maintenance_items %}
     <div class="card shadow-sm">
@@ -33,7 +77,7 @@
                             <th>Last Maintenance</th>
                             <th>Interval (Days)</th>
                             <th>Days Remaining</th>
-                            {% if not is_hod %}
+                            {% if user|in_group:'Clerk' %}
                             <th>Action</th>
                             {% endif %}
                         </tr>
@@ -71,23 +115,11 @@
                                 {% endwith %}
                                 {% endif %}
                             </td>
+                            {% if user|in_group:'Clerk' %}
                             <td>
-<<<<<<< HEAD
-                                <form method="post" action="{% url 'mark_maintained' req.item.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-success">Mark Maintained</button>
-                                </form>
-=======
-                                {% comment %} <form method="post" action="{% url 'perform_maintenance' req.id %}"> {% endcomment %}
-                                    {% comment %} {% csrf_token %} {% endcomment %}
-                                    {% if is_clerk %}
-                                    <button type="submit" class="btn btn-sm btn-outline-success">Mark Maintained</button>
-                                    {% elif is_faculty %}
-                                    <button type="submit" class="btn btn-sm btn-outline-success">Request for Maintenance</button>
-                                    {% endif%}
-                                {% comment %} </form> {% endcomment %}
->>>>>>> rohit
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmMaintenance({{ req.item.id }})">Mark Maintained</button>
                             </td>
+                            {% endif %}
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -103,11 +135,11 @@
             {% if maintenance_items.has_previous %}
             <li class="page-item">
                 <a class="page-link" href="?items_page={{ maintenance_items.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
+                    <span aria-hidden="true">«</span>
                 </a>
             </li>
             {% else %}
-            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            <li class="page-item disabled"><span class="page-link">«</span></li>
             {% endif %}
 
             {% for page_num in maintenance_items.paginator.page_range %}
@@ -119,22 +151,24 @@
             {% if maintenance_items.has_next %}
             <li class="page-item">
                 <a class="page-link" href="?items_page={{ maintenance_items.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
+                    <span aria-hidden="true">»</span>
                 </a>
             </li>
             {% else %}
-            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            <li class="page-item disabled"><span class="page-link">»</span></li>
             {% endif %}
         </ul>
     </nav>
     {% endif %}
-
     {% else %}
     <div class="alert alert-info mt-4">
         <i class="bi bi-info-circle me-1"></i> No issued maintenance items found.
     </div>
     {% endif %}
 </div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
 <style>
     .badge {
@@ -144,4 +178,73 @@
         vertical-align: middle;
     }
 </style>
+
+<script>
+    function confirmMaintenance(id) {
+        document.getElementById('maintenanceItemId').value = id;
+        const maintenanceModal = new bootstrap.Modal(document.getElementById('maintenanceModal'));
+        maintenanceModal.show();
+    }
+    
+    document.getElementById('confirmMaintenanceBtn').addEventListener('click', function() {
+        const id = document.getElementById('maintenanceItemId').value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const confirmBtn = this;
+        const errorToast = document.getElementById('errorToast');
+
+        // Disable button and show loading state
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Processing...';
+
+        fetch(`/mark-maintained/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => {
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error(`Expected JSON, got ${contentType || 'unknown'}: ${text.slice(0, 50)}...`);
+                });
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Hide modal
+                bootstrap.Modal.getInstance(document.getElementById('maintenanceModal')).hide();
+                
+                // Show success toast
+                const toast = new bootstrap.Toast(document.getElementById('maintenanceToast'));
+                toast.show();
+                
+                // Refresh page after a delay
+                setTimeout(() => location.reload(), 500);
+            } else {
+                throw new Error(data.error || 'Failed to mark as maintained');
+            }
+        })
+        .catch(error => {
+            // Show error toast with specific message
+            errorToast.querySelector('.toast-body').textContent = `Failed to mark item as maintained: ${error.message}`;
+            const toast = new bootstrap.Toast(errorToast);
+            toast.show();
+            console.error('Error:', error);
+        })
+        .finally(() => {
+            // Reset button state
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = 'Yes, Mark as Maintained';
+        });
+    });
+</script>
 {% endblock %}

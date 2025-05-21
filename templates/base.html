@@ -21,37 +21,7 @@
             --bg-content: #ffffff;
         }
 
-        [data-bs-theme="dark"] {
-            --sidebar-width: 250px;
-            --sidebar-collapsed-width: 64px;
-            --topbar-height: 60px;
-            --primary-color: #1a1a1a;
-            --primary-hover: #333333;
-            --bg-light: #121212;
-            --bg-content: #1e1e1e;
-            --text-color: #ffffff;
-        }
 
-        [data-bs-theme="dark"] body {
-            background-color: var(--bg-light);
-            color: var(--text-color);
-        }
-
-        [data-bs-theme="dark"] .sidebar {
-            background-color: var(--primary-color);
-        }
-
-        [data-bs-theme="dark"] .top-navbar {
-            background-color: var(--bg-content);
-        }
-
-        [data-bs-theme="dark"] .card {
-            background-color: var(--bg-content);
-        }
-
-        [data-bs-theme="dark"] .footer {
-            background-color: var(--bg-content);
-        }
         
         body {
             min-height: 100vh;
@@ -368,24 +338,27 @@
                     <span>Request</span>
                 </a>
             </li>
+
             <li class="nav-item">
-                <a class="nav-link {% if 'reports' in request.path %}active{% endif %}" href="{% url "reports" %}">
+                <a class="nav-link {% if user|in_group:"Faculty" %} {% if 'user_report' in request.path %}active{% endif %}" href="{% url "user_report" %} {% else %}{% if 'reports' in request.path %}active{% endif %}" href="{% url "reports" %}{% endif %}">
                     <i class="bi bi-file-earmark-bar-graph"></i>
                     <span>Reports</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'item_maintenance' %}active{% endif %}" href="{% url "item_maintenance" %}">
+                <a class="nav-link {% if user|in_group:"Faculty" %}{% if request.resolver_match.url_name == 'user_item_maintenance' %}active{% endif %}" href="{% url "user_item_maintenance" %}{% else %} {% if request.resolver_match.url_name == 'item_maintenance' %}active{% endif %}" href="{% url "item_maintenance" %}{% endif %}">
                     <i class="bi bi-wrench"></i>
                     <span>Maintenance</span>
                 </a>
             </li>
+            {% if not user|in_group:"Faculty" %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'inventory_forecast' %}active{% endif %}" href="{% url 'inventory_forecast' %}">
                     <i class="bi bi-graph-up-arrow"></i>
                     <span>Forecasting</span>
                 </a>
             </li>
+            {% endif %}
             {% if user|in_group:"HOD" %}
             <li class="nav-item">
                 <a class="nav-link {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}" href="{% url 'manage_users' %}">
@@ -517,47 +490,6 @@
                 }
             });
             
-            // Theme toggler functionality
-            const themeToggle = document.getElementById('theme-toggle');
-        const lightIcon = document.getElementById('light-icon');
-        const darkIcon = document.getElementById('dark-icon');
-        const htmlElement = document.documentElement;
-
-        // Check saved theme preference or use system preference
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            htmlElement.setAttribute('data-bs-theme', savedTheme);
-            if (savedTheme === 'dark') {
-                lightIcon.classList.add('d-none');
-                darkIcon.classList.remove('d-none');
-            } else {
-                lightIcon.classList.remove('d-none');
-                darkIcon.classList.add('d-none');
-            }
-        } else {
-            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const defaultTheme = systemPrefersDark ? 'dark' : 'light';
-            htmlElement.setAttribute('data-bs-theme', defaultTheme);
-            localStorage.setItem('theme', defaultTheme);
-        }
-
-        // Theme toggle click handler
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = htmlElement.getAttribute('data-bs-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-            htmlElement.setAttribute('data-bs-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-
-            if (newTheme === 'dark') {
-                lightIcon.classList.add('d-none');
-                darkIcon.classList.remove('d-none');
-            } else {
-                lightIcon.classList.remove('d-none');
-                darkIcon.classList.add('d-none');
-            }
-        });
-    });
     </script>
     {% block extra_js %}{% endblock %}
 </body>

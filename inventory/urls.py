@@ -38,6 +38,7 @@ urlpatterns = [
     # Forecasting
     path('predict-usage/<int:year>', predict_usage, name='predict_usage'),
     path('forecast/', inventory_forecast_view, name='inventory_forecast'),
+    path('predict-usage/next-year', forecast_inventory_usage, name = 'forecast_directly'),
 
     # User Management
     path('create-user/', create_user, name='create_user'),
@@ -48,8 +49,10 @@ urlpatterns = [
     path('item-request-report/', item_request_report, name='item_request_report'),
     path('export-request-report/', export_request_report, name='export_request_report'),
     path('inventory-report/', inventory_report, name='inventory_report'),
+    path('user-report/', user_item_request_report, name='user_report'),
 
     # Maintenance
     path('item-maintenance/', item_maintenance, name='item_maintenance'),
+    path('user-item-maintenance/', user_item_maintenance, name='user_item_maintenance'),
     path('mark-maintained/<int:item_id>/', mark_maintained, name='mark_maintained'),
 ]

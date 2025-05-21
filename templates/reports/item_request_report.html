@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load auth_extras %}
 {% load sum_filters %}
 {% block title %}Monthly Item Request Report{% endblock %}
 
@@ -79,12 +80,15 @@
                         {% endfor %}
                     </select>
                 </div>
+                {% if not user|in_group:'Faculty' %}
+                
+                
                 <div class="col-md-4">
                     <label for="user" class="form-label fw-bold">Requested By</label>
                     <input type="text" name="user" class="form-control form-control-sm shadow-sm"
                            value="{{ request.GET.user }}" placeholder="Enter username">
                 </div>
-            
+                {% endif %}
                 <div class="col-12 d-flex justify-content-end mt-3">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search me-1"></i> Generate Report

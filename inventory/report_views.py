@@ -222,3 +222,58 @@ def export_inventory_to_excel(queryset, selected_period):
     )
     response['Content-Disposition'] = f'attachment; filename={filename}'
     return response
+
+
+@login_required
+def user_item_request_report(request):
+    report_type = request.GET.get('report_type', 'monthly')
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    item = request.GET.get('item')
+    status = request.GET.get('status')
+    user = request.GET.get('user')
+
+    queryset = ItemRequest.objects.none()
+    selected_period = ""
+
+    # Report type logic
+    if report_type == 'yearly' and year:
+        queryset = ItemRequest.objects.filter(user = request.user, request_date__year=year).order_by('request_date')
+        selected_period = f"Year {year}"
+
+    elif report_type == 'monthly' and month:
+        try:
+            year_val, month_val = map(int, month.split('-'))
+            queryset = ItemRequest.objects.filter(user = request.user, request_date__year=year_val, request_date__month=month_val).order_by('request_date')
+            selected_period = f"{calendar.month_name[month_val]} {year_val}"
+        except Exception:
+            selected_period = "Invalid month"
+
+    elif report_type == 'custom' and start_date and end_date:
+        try:
+            start = parse_date(start_date)
+            end = parse_date(end_date)
+            if start and end:
+                queryset = ItemRequest.objects.filter(user = request.user, request_date__range=(start, end)).order_by('request_date')
+                selected_period = f"{start.strftime('%b %d, %Y')} - {end.strftime('%b %d, %Y')}"
+        except Exception:
+            selected_period = "Invalid custom range"
+    # print(selected_period)
+    # Apply filters
+    if item:
+        queryset = queryset.filter(item__name__icontains=item).order_by('request_date')
+    if status:
+        queryset = queryset.filter(status=status).order_by('request_date')
+    if user:
+        queryset = queryset.filter(user__username__icontains=user).order_by('request_date')
+
+    status_choices = ['pending', 'approved', 'rejected', 'issued', 'returned']
+
+    return render(request, 'reports/item_request_report.html', {
+        'requests': queryset,
+        'selected_period': selected_period,
+        'status_choices': status_choices,
+    })
+
