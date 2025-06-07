@@ -39,6 +39,7 @@ urlpatterns = [
     path('predict-usage/<int:year>', predict_usage, name='predict_usage'),
     path('forecast/', inventory_forecast_view, name='inventory_forecast'),
     path('predict-usage/next-year', forecast_inventory_usage, name = 'forecast_directly'),
+    path('generate-forecast-excel/', generate_forecast_excel_report, name='generate_forecast_excel_report'),
 
     # User Management
     path('create-user/', create_user, name='create_user'),

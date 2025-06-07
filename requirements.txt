@@ -1,3 +1,4 @@
 Django
 statsmodels
 openpyxl
+WeasyPrint
