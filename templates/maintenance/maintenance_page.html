@@ -4,57 +4,139 @@
 {% load maintenance_filters %}
 {% load auth_extras %}
 {% block content %}
-<div class="container mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h3 class="fw-bold">Maintenance Tracker</h3>
-            <p class="text-muted">Track issued items that require maintenance</p>
+<div class="page-header">
+    <div class="page-header-content">
+        <h1 class="page-title">
+            <i class="fas fa-tools me-2"></i>
+            Maintenance Tracker
+        </h1>
+        <p class="page-subtitle">Monitor and manage maintenance schedules for issued items</p>
+    </div>
+</div>
+
+<div class="content-container">
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card stat-card-warning">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ due_count|default:0 }}</h3>
+                    <p class="stat-label">Due for Maintenance</p>
+                </div>
+            </div>
         </div>
-        <form id="searchForm" method="get" class="d-flex" style="max-width: 300px;">
-            <input type="text" name="q" class="form-control form-control-sm me-2" placeholder="Search item..." value="{{ request.GET.q }}">
-            <select name="filter" class="form-select form-select-sm me-2">
-                <option value="">All</option>
-                <option value="due" {% if request.GET.filter == 'due' %}selected{% endif %}>Due</option>
-                <option value="overdue" {% if request.GET.filter == 'overdue' %}selected{% endif %}>Overdue</option>
-            </select>
-            <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-        </form>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card stat-card-danger">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ overdue_count|default:0 }}</h3>
+                    <p class="stat-label">Overdue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card stat-card-success">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ maintained_count|default:0 }}</h3>
+                    <p class="stat-label">Recently Maintained</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card stat-card-info">
+                <div class="stat-icon">
+                    <i class="fas fa-list"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ total_count|default:0 }}</h3>
+                    <p class="stat-label">Total Items</p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-        <div id="maintenanceToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="bi bi-check-circle me-2"></i> Item maintenance has been successfully recorded.
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="searchForm" method="get">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" name="q" class="form-control search-input" 
+                                   placeholder="Search items, users, or categories..." value="{{ request.GET.q }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="filter" class="form-select">
+                            <option value="">All Items</option>
+                            <option value="due" {% if request.GET.filter == 'due' %}selected{% endif %}>Due for Maintenance</option>
+                            <option value="overdue" {% if request.GET.filter == 'overdue' %}selected{% endif %}>Overdue</option>
+                            <option value="recent" {% if request.GET.filter == 'recent' %}selected{% endif %}>Recently Maintained</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                            <a href="{% url 'item_maintenance' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Clear
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
+            </form>
         </div>
-        <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="bi bi-exclamation-circle me-2"></i> Failed to mark item as maintained.
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
+    </div>
+
+    <!-- Success and Error Alerts -->
+    <div class="alert-container">
+        <div id="maintenanceAlert" class="alert alert-success alert-dismissible fade" role="alert" style="display: none;">
+            <i class="fas fa-check-circle me-2"></i>
+            <span id="alertMessage">Item maintenance has been successfully recorded.</span>
+            <button type="button" class="btn-close" onclick="hideAlert()"></button>
+        </div>
+        <div id="errorAlert" class="alert alert-danger alert-dismissible fade" role="alert" style="display: none;">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span id="errorMessage">Failed to mark item as maintained.</span>
+            <button type="button" class="btn-close" onclick="hideAlert()"></button>
         </div>
     </div>
     
     <!-- Confirmation Modal -->
-    <div class="modal fade" id="maintenanceModal" tabindex="-1" aria-labelledby="maintenanceModalLabel" aria-hidden="true">
+    <div class="modal fade" id="maintenanceModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="maintenanceModalLabel">Confirm Maintenance</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">
+                        <i class="fas fa-tools me-2"></i>
+                        Confirm Maintenance
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to mark this item as maintained?
+                    <div class="text-center mb-3">
+                        <i class="fas fa-question-circle fa-3x text-warning mb-3"></i>
+                        <h6>Mark Item as Maintained?</h6>
+                        <p class="text-muted mb-0">This will update the maintenance record and reset the maintenance schedule.</p>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" id="confirmMaintenanceBtn">Yes, Mark as Maintained</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirmMaintenanceBtn">
+                        <i class="fas fa-check me-2"></i>Yes, Mark as Maintained
+                    </button>
                 </div>
             </div>
         </div>
@@ -65,61 +147,130 @@
     {% csrf_token %}
 
     {% if maintenance_items %}
-    <div class="card shadow-sm">
+    <!-- Maintenance Items Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-cogs me-2"></i>Maintenance Schedule
+            </h5>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0 align-middle">
-                    <thead class="table-light">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-header">
                         <tr>
-                            <th>Item</th>
-                            <th>Issued To</th>
-                            <th>Issued On</th>
-                            <th>Last Maintenance</th>
-                            <th>Interval (Days)</th>
-                            <th>Days Remaining</th>
+                            <th>
+                                <i class="fas fa-box me-1"></i>Item Details
+                            </th>
+                            <th>
+                                <i class="fas fa-user me-1"></i>Issued To
+                            </th>
+                            <th>
+                                <i class="fas fa-calendar me-1"></i>Issued Date
+                            </th>
+                            <th>
+                                <i class="fas fa-wrench me-1"></i>Last Maintenance
+                            </th>
+                            <th>
+                                <i class="fas fa-clock me-1"></i>Interval
+                            </th>
+                            <th>
+                                <i class="fas fa-hourglass-half me-1"></i>Status
+                            </th>
                             {% if user|in_group:'Clerk' %}
-                            <th>Action</th>
+                            <th>
+                                <i class="fas fa-cog me-1"></i>Actions
+                            </th>
                             {% endif %}
                         </tr>
                     </thead>
                     <tbody id="maintenanceTable">
                         {% for req in maintenance_items %}
-                        <tr>
-                            <td class="fw-semibold">{{ req.item.name }}</td>
-                            <td>{{ req.user.get_full_name|default:req.user.username }}</td>
-                            <td>{{ req.issued_date|date:"Y-m-d" }}</td>
+                        <tr class="maintenance-row">
                             <td>
-                                {% if req.last_maintenance_date %} 
-                                {% comment %} change from req.item {% endcomment %}
-                                    {{ req.last_maintenance_date|date:"Y-m-d" }}
+                                <div class="item-info">
+                                    <span class="item-name">{{ req.item.name }}</span>
+                                    {% if req.item.category %}
+                                    <span class="item-category">{{ req.item.category }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="user-info">
+                                    <i class="fas fa-user-circle me-2"></i>
+                                    {{ req.user.get_full_name|default:req.user.username }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="date-info">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    {{ req.issued_date|date:"M d, Y" }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if req.last_maintenance_date %}
+                                <div class="maintenance-date">
+                                    <i class="fas fa-check-circle me-1 text-success"></i>
+                                    {{ req.last_maintenance_date|date:"M d, Y" }}
+                                </div>
                                 {% else %}
-                                    <span class="text-muted">Not recorded</span>
+                                <span class="text-muted">
+                                    <i class="fas fa-question-circle me-1"></i>
+                                    Not recorded
+                                </span>
                                 {% endif %}
                             </td>
-                            <td>{{ req.item.maintenance_interval_days }}</td>
                             <td>
-                                {% comment %} change from req.item {% endcomment %}
+                                <span class="interval-badge">
+                                    {{ req.item.maintenance_interval_days }} days
+                                </span>
+                            </td>
+                            <td>
                                 {% if req.last_maintenance_date %}
                                 {% with remaining=req.last_maintenance_date|days_until_maintenance:req.item.maintenance_interval_days %}
-                                    {% if remaining >= 0 %}
-                                        <span class="badge bg-info text-dark">{{ remaining }} days</span>
+                                    {% if remaining > 7 %}
+                                        <span class="status-badge status-good">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            {{ remaining }} days left
+                                        </span>
+                                    {% elif remaining > 0 %}
+                                        <span class="status-badge status-due">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Due in {{ remaining }} days
+                                        </span>
                                     {% else %}
-                                        <span class="badge bg-danger">Overdue</span>
+                                        <span class="status-badge status-overdue">
+                                            <i class="fas fa-times-circle me-1"></i>
+                                            Overdue
+                                        </span>
                                     {% endif %}
                                 {% endwith %}
                                 {% else %}
                                 {% with remaining=req.issued_date|days_until_maintenance:req.item.maintenance_interval_days %}
-                                    {% if remaining >= 0 %}
-                                        <span class="badge bg-info text-dark">{{ remaining }} days</span>
+                                    {% if remaining > 7 %}
+                                        <span class="status-badge status-good">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            {{ remaining }} days left
+                                        </span>
+                                    {% elif remaining > 0 %}
+                                        <span class="status-badge status-due">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Due in {{ remaining }} days
+                                        </span>
                                     {% else %}
-                                        <span class="badge bg-danger">Overdue</span>
+                                        <span class="status-badge status-overdue">
+                                            <i class="fas fa-times-circle me-1"></i>
+                                            Overdue
+                                        </span>
                                     {% endif %}
                                 {% endwith %}
                                 {% endif %}
                             </td>
                             {% if user|in_group:'Clerk' %}
                             <td>
-                                <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmMaintenance({{ req.id }})">Mark Maintained</button>
+                                <button type="button" class="btn btn-success btn-sm" onclick="confirmMaintenance({{ req.id }})">
+                                    <i class="fas fa-wrench me-1"></i>Mark Maintained
+                                </button>
                             </td>
                             {% endif %}
                         </tr>
@@ -132,54 +283,57 @@
 
     <!-- Pagination -->
     {% if maintenance_items.has_other_pages %}
-    <nav class="mt-3">
-        <ul class="pagination justify-content-center">
-            {% if maintenance_items.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?items_page={{ maintenance_items.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}" aria-label="Previous">
-                    <span aria-hidden="true">«</span>
-                </a>
-            </li>
-            {% else %}
-            <li class="page-item disabled"><span class="page-link">«</span></li>
-            {% endif %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav>
+            <ul class="pagination pagination-modern">
+                {% if maintenance_items.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?items_page={{ maintenance_items.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        <i class="fas fa-chevron-left"></i>
+                    </span>
+                </li>
+                {% endif %}
 
-            {% for page_num in maintenance_items.paginator.page_range %}
-            <li class="page-item {% if page_num == maintenance_items.number %}active{% endif %}">
-                <a class="page-link" href="?items_page={{ page_num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}">{{ page_num }}</a>
-            </li>
-            {% endfor %}
+                {% for page_num in maintenance_items.paginator.page_range %}
+                <li class="page-item {% if page_num == maintenance_items.number %}active{% endif %}">
+                    <a class="page-link" href="?items_page={{ page_num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}">{{ page_num }}</a>
+                </li>
+                {% endfor %}
 
-            {% if maintenance_items.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?items_page={{ maintenance_items.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}" aria-label="Next">
-                    <span aria-hidden="true">»</span>
-                </a>
-            </li>
-            {% else %}
-            <li class="page-item disabled"><span class="page-link">»</span></li>
-            {% endif %}
-        </ul>
-    </nav>
+                {% if maintenance_items.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?items_page={{ maintenance_items.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        <i class="fas fa-chevron-right"></i>
+                    </span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
     {% endif %}
     {% else %}
-    <div class="alert alert-info mt-4">
-        <i class="bi bi-info-circle me-1"></i> No issued maintenance items found.
+    <!-- No Items Found -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Maintenance Items Found</h5>
+            <p class="text-muted">There are currently no items requiring maintenance tracking.</p>
+        </div>
     </div>
     {% endif %}
 </div>
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-
-<style>
-    .badge {
-        font-size: 0.85rem;
-    }
-    .table th, .table td {
-        vertical-align: middle;
-    }
-</style>
 
 <script>
     function confirmMaintenance(id) {
@@ -188,15 +342,36 @@
         maintenanceModal.show();
     }
     
+    function hideAlert() {
+        document.getElementById('maintenanceAlert').style.display = 'none';
+        document.getElementById('errorAlert').style.display = 'none';
+    }
+    
+    function showAlert(type, message) {
+        hideAlert();
+        const alert = document.getElementById(type === 'success' ? 'maintenanceAlert' : 'errorAlert');
+        const messageSpan = alert.querySelector('span');
+        messageSpan.textContent = message;
+        alert.style.display = 'block';
+        alert.classList.add('show');
+        
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            alert.classList.remove('show');
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 150);
+        }, 5000);
+    }
+    
     document.getElementById('confirmMaintenanceBtn').addEventListener('click', function() {
         const id = document.getElementById('maintenanceItemId').value;
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const confirmBtn = this;
-        const errorToast = document.getElementById('errorToast');
 
         // Disable button and show loading state
         confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Processing...';
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
 
         fetch(`/mark-maintained/${id}/`, {
             method: 'POST',
@@ -208,7 +383,6 @@
             body: JSON.stringify({})
         })
         .then(response => {
-            // Check if response is JSON
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 return response.text().then(text => {
@@ -225,28 +399,138 @@
                 // Hide modal
                 bootstrap.Modal.getInstance(document.getElementById('maintenanceModal')).hide();
                 
-                // Show success toast
-                const toast = new bootstrap.Toast(document.getElementById('maintenanceToast'));
-                toast.show();
+                // Show success alert
+                showAlert('success', 'Item maintenance has been successfully recorded.');
                 
                 // Refresh page after a delay
-                setTimeout(() => location.reload(), 500);
+                setTimeout(() => location.reload(), 1500);
             } else {
                 throw new Error(data.error || 'Failed to mark as maintained');
             }
         })
-        .catch(error => {git 
-            // Show error toast with specific message
-            errorToast.querySelector('.toast-body').textContent = `Failed to mark item as maintained: ${error.message}`;
-            const toast = new bootstrap.Toast(errorToast);
-            toast.show();
+        .catch(error => {
+            // Show error alert
+            showAlert('error', `Failed to mark item as maintained: ${error.message}`);
             console.error('Error:', error);
         })
         .finally(() => {
+            // Reset button
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Yes, Mark as Maintained';
+        });
+    });
+
+    // Animation on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('.maintenance-row');
+        rows.forEach((row, index) => {
+            row.style.animationDelay = `${index * 0.05}s`;
+            row.classList.add('fade-in-up');
+        });
+    });
+</script>
+
+<style>
+.item-info .item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+}
+
+.item-info .item-category {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-light);
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    display: inline-block;
+    margin-top: 0.25rem;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.date-info {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.maintenance-date {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.interval-badge {
+    background: linear-gradient(135deg, var(--info-color), #17a2b8);
+    color: white;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.status-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.status-good {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.status-due {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: white;
+}
+
+.status-overdue {
+    background: linear-gradient(135deg, #dc3545, #e83e8c);
+    color: white;
+}
+
+.maintenance-row {
+    transition: all 0.3s ease;
+}
+
+.maintenance-row:hover {
+    background: var(--hover-bg);
+    transform: translateX(4px);
+}
+
+.alert-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    max-width: 400px;
+}
+
+.alert {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+// Confirmation button logic
+document.addEventListener('DOMContentLoaded', function() {
+    // Add your maintenance confirmation logic here
+    document.querySelectorAll('.confirm-maintenance').forEach(button => {
+        button.addEventListener('click', function() {
+            const confirmBtn = this;
             // Reset button state
             confirmBtn.disabled = false;
             confirmBtn.innerHTML = 'Yes, Mark as Maintained';
         });
     });
-</script>
+});
+</style>
 {% endblock %}

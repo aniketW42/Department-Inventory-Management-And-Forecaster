@@ -1,66 +1,537 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Inventory Analytics Dashboard{% endblock %}
+{% block title %}Reports & Analytics Dashboard{% endblock %}
+{% block breadcrumb %}Reports & Analytics{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="col">
-        <h1 class="h3 mb-0 fw-bold">Reports & Analytics</h1>
-        <p class="mb-3 text-muted">Monitor inventory and request trends visually.</p>
+<div class="reports-dashboard">
+    <!-- Enhanced Header Section -->
+    <div class="page-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">Reports & Analytics</h1>
+                <p class="text-muted mb-0">Comprehensive insights into inventory management and request patterns</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-download me-2"></i>Export Reports
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-excel me-2"></i>Excel Report</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-pdf me-2"></i>PDF Report</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-text me-2"></i>CSV Report</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Report Links -->
-    <div class="row g-4 mb-5">
-        <div class="col-md-6">
+    <!-- Enhanced Statistics Overview -->
+    <div class="stats-grid mb-4">
+        <div class="stats-card primary">
+            <div class="stats-icon bg-warning">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="stats-value">{{ pending_count }}</div>
+            <div class="stats-label">Pending Requests</div>
+            <div class="stats-trend">
+                <i class="bi bi-arrow-up"></i>
+                <span>{{ pending_count|floatformat:0 }}% of total</span>
+            </div>
+        </div>
+
+        <div class="stats-card success">
+            <div class="stats-icon bg-success">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stats-value">{{ approved_count }}</div>
+            <div class="stats-label">Approved Requests</div>
+            <div class="stats-trend positive">
+                <i class="bi bi-arrow-up"></i>
+                <span>+{{ approved_count|floatformat:0 }} this month</span>
+            </div>
+        </div>
+
+        <div class="stats-card info">
+            <div class="stats-icon bg-primary">
+                <i class="bi bi-box-arrow-up"></i>
+            </div>
+            <div class="stats-value">{{ issued_count }}</div>
+            <div class="stats-label">Items Issued</div>
+            <div class="stats-trend positive">
+                <i class="bi bi-arrow-up"></i>
+                <span>Active items</span>
+            </div>
+        </div>
+
+        <div class="stats-card warning">
+            <div class="stats-icon bg-danger">
+                <i class="bi bi-x-circle"></i>
+            </div>
+            <div class="stats-value">{{ rejected_count }}</div>
+            <div class="stats-label">Rejected Requests</div>
+            <div class="stats-trend negative">
+                <i class="bi bi-arrow-down"></i>
+                <span>{{ rejected_count|floatformat:0 }}% rejection rate</span>
+            </div>
+        </div>
+
+        <div class="stats-card inventory">
+            <div class="stats-icon bg-success">
+                <i class="bi bi-boxes"></i>
+            </div>
+            <div class="stats-value">{{ in_stock_count }}</div>
+            <div class="stats-label">Items In Stock</div>
+            <div class="stats-trend positive">
+                <i class="bi bi-check"></i>
+                <span>Well stocked</span>
+            </div>
+        </div>
+
+        <div class="stats-card inventory-low">
+            <div class="stats-icon bg-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="stats-value">{{ low_stock_count }}</div>
+            <div class="stats-label">Low Stock Items</div>
+            <div class="stats-trend negative">
+                <i class="bi bi-arrow-down"></i>
+                <span>Needs attention</span>
+            </div>
+        </div>
+
+        <div class="stats-card inventory-out">
+            <div class="stats-icon bg-danger">
+                <i class="bi bi-slash-circle"></i>
+            </div>
+            <div class="stats-value">{{ out_of_stock_count }}</div>
+            <div class="stats-label">Out of Stock</div>
+            <div class="stats-trend negative">
+                <i class="bi bi-exclamation"></i>
+                <span>Critical</span>
+            </div>
+        </div>
+
+        <div class="stats-card returned">
+            <div class="stats-icon bg-info">
+                <i class="bi bi-arrow-return-left"></i>
+            </div>
+            <div class="stats-value">{{ returned_count }}</div>
+            <div class="stats-label">Returned Items</div>
+            <div class="stats-trend">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span>Completed cycle</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Links Grid -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
             <a href="{% url 'item_request_report' %}" class="text-decoration-none">
-                <div class="card shadow-sm border-primary h-100">
-                    <div class="card-body d-flex align-items-center justify-content-between">
-                        <div>
-                            <h4 class="fw-bold text-primary">Item Request Report</h4>
-                            <p class="mb-0 text-muted">View and export reports based on item requests.</p>
+                <div class="card report-card hover-lift h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="report-icon bg-primary">
+                                <i class="bi bi-bar-chart-line"></i>
+                            </div>
+                            <span class="badge badge-primary">Requests</span>
                         </div>
-                        <i class="bi bi-bar-chart-line fs-1 text-primary"></i>
+                        <h5 class="card-title fw-bold">Item Request Reports</h5>
+                        <p class="card-text text-muted">Analyze request patterns, status distributions, and user activity trends.</p>
+                        <div class="d-flex align-items-center text-primary">
+                            <span class="me-2">View Report</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </div>
                     </div>
                 </div>
             </a>
         </div>
-        <div class="col-md-6">
+
+        <div class="col-lg-6">
             <a href="{% url "inventory_report" %}" class="text-decoration-none">
-                <div class="card shadow-sm border-success h-100">
-                    <div class="card-body d-flex align-items-center justify-content-between">
-                        <div>
-                            <h4 class="fw-bold text-success">Inventory Report</h4>
-                            <p class="mb-0 text-muted">Analyze stock levels and inventory changes.</p>
+                <div class="card report-card hover-lift h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="report-icon bg-success">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <span class="badge badge-success">Inventory</span>
                         </div>
-                        <i class="bi bi-box-seam fs-1 text-success"></i>
+                        <h5 class="card-title fw-bold">Inventory Reports</h5>
+                        <p class="card-text text-muted">Track stock levels, item movements, and inventory valuation over time.</p>
+                        <div class="d-flex align-items-center text-success">
+                            <span class="me-2">View Report</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </div>
                     </div>
                 </div>
             </a>
         </div>
     </div>
 
-    <!-- Charts Section -->
+    <!-- Enhanced Analytics Charts -->
     <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white border-0 fw-bold">Requests by Status</div>
+        <!-- Request Status Distribution -->
+        <div class="col-lg-6">
+            <div class="card analytics-card hover-lift">
+                <div class="card-header">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="mb-1">Request Status Distribution</h6>
+                            <small class="text-muted">Current request status breakdown</small>
+                        </div>
+                        <div class="chart-controls">
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Export Chart">
+                                <i class="bi bi-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div class="card-body">
-                    <div style="height: 300px;">
+                    <div class="chart-container" style="height: 300px;">
                         <canvas id="requestStatusChart"></canvas>
                     </div>
+                    <div class="chart-legend mt-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="legend-item">
+                                    <span class="legend-color bg-warning"></span>
+                                    <span class="legend-label">Pending ({{ pending_count }})</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="legend-item">
+                                    <span class="legend-color bg-success"></span>
+                                    <span class="legend-label">Approved ({{ approved_count }})</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="legend-item">
+                                    <span class="legend-color bg-primary"></span>
+                                    <span class="legend-label">Issued ({{ issued_count }})</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="legend-item">
+                                    <span class="legend-color bg-danger"></span>
+                                    <span class="legend-label">Rejected ({{ rejected_count }})</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white border-0 fw-bold">Inventory Stock Levels</div>
+        <!-- Inventory Status -->
+        <div class="col-lg-6">
+            <div class="card analytics-card hover-lift">
+                <div class="card-header">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="mb-1">Inventory Stock Levels</h6>
+                            <small class="text-muted">Current stock status overview</small>
+                        </div>
+                        <div class="chart-controls">
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Export Chart">
+                                <i class="bi bi-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div class="card-body">
-                    <div style="height: 300px;">
-                        <canvas id="stockChart"></canvas>
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="inventoryStatusChart"></canvas>
+                    </div>
+                    <div class="chart-legend mt-3">
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <div class="legend-item">
+                                    <span class="legend-color bg-success"></span>
+                                    <span class="legend-label">In Stock ({{ in_stock_count }})</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="legend-item">
+                                    <span class="legend-color bg-warning"></span>
+                                    <span class="legend-label">Low Stock ({{ low_stock_count }})</span>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="legend-item">
+                                    <span class="legend-color bg-danger"></span>
+                                    <span class="legend-label">Out of Stock ({{ out_of_stock_count }})</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="col-12">
+            <div class="card activity-card hover-lift">
+                <div class="card-header">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="mb-1">Recent Activity</h6>
+                            <small class="text-muted">Latest system activities and trends</small>
+                        </div>
+                        <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="activity-timeline">
+                        <div class="activity-item">
+                            <div class="activity-icon bg-success">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">Items Successfully Issued</div>
+                                <div class="activity-description">{{ issued_count }} items were issued to users</div>
+                                <div class="activity-time">Updated recently</div>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon bg-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">Low Stock Alert</div>
+                                <div class="activity-description">{{ low_stock_count }} items are running low on stock</div>
+                                <div class="activity-time">Requires attention</div>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon bg-primary">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">Pending Requests</div>
+                                <div class="activity-description">{{ pending_count }} requests awaiting approval</div>
+                                <div class="activity-time">Action needed</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Enhanced Reports Dashboard Styles */
+.page-header h1 {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stats-card.primary { border-left: 4px solid var(--primary-500); }
+.stats-card.success { border-left: 4px solid var(--success-500); }
+.stats-card.info { border-left: 4px solid var(--primary-500); }
+.stats-card.warning { border-left: 4px solid var(--warning-500); }
+.stats-card.inventory { border-left: 4px solid var(--success-500); }
+.stats-card.inventory-low { border-left: 4px solid var(--warning-500); }
+.stats-card.inventory-out { border-left: 4px solid var(--danger-500); }
+.stats-card.returned { border-left: 4px solid var(--info-500); }
+
+.report-card {
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-base);
+}
+
+.report-card:hover {
+    border-color: var(--primary-300);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.report-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--border-radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.analytics-card {
+    border: 1px solid var(--border-color);
+}
+
+.chart-container {
+    position: relative;
+}
+
+.chart-legend {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.legend-label {
+    color: var(--text-secondary);
+}
+
+.activity-card {
+    border: 1px solid var(--border-color);
+}
+
+.activity-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.125rem;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex-grow: 1;
+}
+
+.activity-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.activity-description {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.activity-time {
+    color: var(--text-tertiary);
+    font-size: 0.8125rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .page-header .row {
+        text-align: center;
+    }
+    
+    .page-header .col-md-4 {
+        margin-top: 1rem;
+    }
+    
+    .chart-legend .row {
+        justify-content: center;
+    }
+    
+    .activity-item {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Request Status Chart
+    const requestStatusCtx = document.getElementById('requestStatusChart').getContext('2d');
+    new Chart(requestStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pending', 'Approved', 'Issued', 'Rejected', 'Returned'],
+            datasets: [{
+                data: [{{ pending_count }}, {{ approved_count }}, {{ issued_count }}, {{ rejected_count }}, {{ returned_count }}],
+                backgroundColor: [
+                    'rgb(245, 158, 11)',  // warning
+                    'rgb(34, 197, 94)',   // success
+                    'rgb(59, 130, 246)',  // primary
+                    'rgb(239, 68, 68)',   // danger
+                    'rgb(99, 102, 241)'   // info
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    // Inventory Status Chart
+    const inventoryStatusCtx = document.getElementById('inventoryStatusChart').getContext('2d');
+    new Chart(inventoryStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['In Stock', 'Low Stock', 'Out of Stock'],
+            datasets: [{
+                data: [{{ in_stock_count }}, {{ low_stock_count }}, {{ out_of_stock_count }}],
+                backgroundColor: [
+                    'rgb(34, 197, 94)',   // success
+                    'rgb(245, 158, 11)',  // warning
+                    'rgb(239, 68, 68)'    // danger
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+});
+</script>
+
         </div>
     </div>
 </div>

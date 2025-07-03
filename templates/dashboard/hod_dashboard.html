@@ -77,6 +77,78 @@
     </div>
   </div>
 
+  <!-- User Management Stats -->
+  <div class="row g-4 mb-5">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-users me-2 text-primary"></i>User Management
+          </h5>
+          <a href="{% url 'manage_users' %}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-cog me-1"></i>Manage Users
+          </a>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <div class="d-flex align-items-center p-3 bg-primary bg-opacity-10 rounded">
+                <div class="me-3">
+                  <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="fas fa-users text-white"></i>
+                  </div>
+                </div>
+                <div>
+                  <h6 class="text-muted mb-0 small">Total Users</h6>
+                  <h4 class="fw-bold mb-0 text-primary">{{ total_users }}</h4>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="d-flex align-items-center p-3 bg-info bg-opacity-10 rounded">
+                <div class="me-3">
+                  <div class="rounded-circle bg-info d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="fas fa-chalkboard-teacher text-white"></i>
+                  </div>
+                </div>
+                <div>
+                  <h6 class="text-muted mb-0 small">Faculty</h6>
+                  <h4 class="fw-bold mb-0 text-info">{{ faculty_users }}</h4>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="d-flex align-items-center p-3 bg-success bg-opacity-10 rounded">
+                <div class="me-3">
+                  <div class="rounded-circle bg-success d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="fas fa-user-tie text-white"></i>
+                  </div>
+                </div>
+                <div>
+                  <h6 class="text-muted mb-0 small">Clerks</h6>
+                  <h4 class="fw-bold mb-0 text-success">{{ clerk_users }}</h4>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="d-flex align-items-center p-3 bg-warning bg-opacity-10 rounded">
+                <div class="me-3">
+                  <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="fas fa-user-shield text-white"></i>
+                  </div>
+                </div>
+                <div>
+                  <h6 class="text-muted mb-0 small">HODs</h6>
+                  <h4 class="fw-bold mb-0 text-warning">{{ hod_users }}</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Chart and Tabs Section -->
   <div class="row g-4">
     <!-- Chart Section -->

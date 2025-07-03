@@ -2,93 +2,418 @@
 {% block title %}View Requests{% endblock %}
 
 {% block content %}
-<div class="container">
-    
-<div class="col mb-3    ">
-    <h1 class="h3 mb-0 fw-bold" style="color: #343a40;">Item Requests : {{requser.username}}</h1>
-    <p class="mb-0" style="color: #6c757d;">View all item requests</p>
-</div>
-<table class="table table-hover align-middle">
-    <thead >
-        <tr >
-            <th>Item</th>
-            <th>Quantity</th>
-            <th>Reason</th>
-            <th>Requested By</th>
-            <th>Status</th>
-            <th>Processed By</th>
-            <th>Request Date</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for req in requests %}
-        <tr >
-            <td>{{ req.item.name }}</td>
-            <td>{{ req.quantity }}</td>
-            <td>{{ req.reason }}</td>
-            <td>{{ req.user.username }}</td>
-            <td>
-                <span class="badge bg-{% if req.status == 'approved' %}success{% elif req.status == 'rejected' %}danger{% elif req.status == 'pending' %}warning{% elif req.status == 'issued' %}primary{% else %}secondary {% endif %}">
-                    {{ req.status }}
-                </span>
-            </td>
-            <td>
-                {% if req.processed_by %}
-                    {{ req.processed_by.username }}
-                {% else %}
-                    N/A
-                {% endif %}
-            </td>
-            <td>{{ req.request_date|date:"M d, Y" }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-
-<!-- Pagination Controls -->
-{% if requests.has_other_pages %}
-<nav class="mt-3">
-    <ul class="pagination justify-content-center">
-        <!-- Previous button -->
-        {% if requests.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ requests.previous_page_number }}">Previous</a>
-            </li>
-        {% else %}
-            <li class="page-item disabled"><span class="page-link">Previous</span></li>
-        {% endif %}
-
-        <!-- Page numbers -->
-         
-        {% for page_num in requests.paginator.page_range %}
-            {% if page_num == 1 or page_num == requests.paginator.num_pages or page_num == requests.number %}
-                <li class="page-item {% if requests.number == page_num %}active{% endif %}">
-                    <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
-                </li>
-            {% elif page_num == requests.number|add:"-1" or page_num == requests.number|add:"1" %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
-                </li>
-            {% elif page_num == 2 and requests.number > 4 %}
-                <li class="page-item disabled"><span class="page-link">...</span></li>
-            {% elif page_num == requests.paginator.num_pages|add:"-1" and requests.number < items.paginator.num_pages|add:"-3" %}
-                <li class="page-item disabled"><span class="page-link">...</span></li>
+<div class="page-header">
+    <div class="page-header-content">
+        <h1 class="page-title">
+            <i class="fas fa-list-alt me-2"></i>
+            Item Requests
+            {% if requser %}
+                <span class="text-primary">for {{ requser.username }}</span>
             {% endif %}
-        {% endfor %}
-
-        <!-- Next button -->
-
-        {% if requests.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ requests.next_page_number }}">Next</a>
-            </li>
-        {% else %}
-            <li class="page-item disabled"><span class="page-link">Next</span></li>
-        {% endif %}
-    </ul>
-</nav>
+        </h1>
+        <p class="page-subtitle">Manage and track all item requests in the system</p>
+    </div>
 </div>
-{% endif %}
 
+<div class="content-container">
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card stat-card-primary">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ pending_count|default:0 }}</h3>
+                    <p class="stat-label">Pending Requests</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card stat-card-success">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ approved_count|default:0 }}</h3>
+                    <p class="stat-label">Approved</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card stat-card-info">
+                <div class="stat-icon">
+                    <i class="fas fa-hand-holding"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ issued_count|default:0 }}</h3>
+                    <p class="stat-label">Issued</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card stat-card-danger">
+                <div class="stat-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 class="stat-number">{{ rejected_count|default:0 }}</h3>
+                    <p class="stat-label">Rejected</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="form-control search-input" placeholder="Search requests..." id="searchInput">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="issued">Issued</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="date" class="form-control" id="dateFilter" placeholder="Filter by date">
+                </div>
+                <div class="col-md-3 text-end">
+                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times me-2"></i>Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Requests Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-table me-2"></i>Requests Overview
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="requestsTable">
+                    <thead class="table-header">
+                        <tr>
+                            <th>
+                                <i class="fas fa-box me-1"></i>Item
+                            </th>
+                            <th>
+                                <i class="fas fa-sort-numeric-up me-1"></i>Quantity
+                            </th>
+                            <th>
+                                <i class="fas fa-comment me-1"></i>Reason
+                            </th>
+                            <th>
+                                <i class="fas fa-user me-1"></i>Requested By
+                            </th>
+                            <th>
+                                <i class="fas fa-info-circle me-1"></i>Status
+                            </th>
+                            <th>
+                                <i class="fas fa-user-check me-1"></i>Processed By
+                            </th>
+                            <th>
+                                <i class="fas fa-calendar me-1"></i>Request Date
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr class="request-row" data-search="{{ req.item.name|lower }} {{ req.user.username|lower }} {{ req.reason|lower }}" 
+                            data-status="{{ req.status }}" data-date="{{ req.request_date|date:'Y-m-d' }}">
+                            <td>
+                                <div class="item-info">
+                                    <span class="item-name">{{ req.item.name }}</span>
+                                    {% if req.item.category %}
+                                    <span class="item-category">{{ req.item.category }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="quantity-badge">{{ req.quantity }}</span>
+                            </td>
+                            <td>
+                                <div class="reason-text" title="{{ req.reason }}">
+                                    {{ req.reason|truncatewords:8 }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="user-info">
+                                    <i class="fas fa-user-circle me-2"></i>
+                                    {{ req.user.username }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if req.status == 'approved' %}
+                                <span class="status-badge status-approved">
+                                    <i class="fas fa-check me-1"></i>Approved
+                                </span>
+                                {% elif req.status == 'rejected' %}
+                                <span class="status-badge status-rejected">
+                                    <i class="fas fa-times me-1"></i>Rejected
+                                </span>
+                                {% elif req.status == 'pending' %}
+                                <span class="status-badge status-pending">
+                                    <i class="fas fa-clock me-1"></i>Pending
+                                </span>
+                                {% elif req.status == 'issued' %}
+                                <span class="status-badge status-issued">
+                                    <i class="fas fa-hand-holding me-1"></i>Issued
+                                </span>
+                                {% else %}
+                                <span class="status-badge status-unknown">
+                                    <i class="fas fa-question me-1"></i>{{ req.status|title }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if req.processed_by %}
+                                <div class="user-info">
+                                    <i class="fas fa-user-check me-2"></i>
+                                    {{ req.processed_by.username }}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">Not Processed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="date-info">
+                                    <i class="fas fa-calendar-alt me-2"></i>
+                                    {{ req.request_date|date:"M d, Y" }}
+                                    <div class="time-info">{{ req.request_date|date:"H:i" }}</div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Requests Found</h5>
+                                <p class="text-muted">There are no item requests to display.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if requests.has_other_pages %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav>
+            <ul class="pagination pagination-modern">
+                <!-- Previous button -->
+                {% if requests.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ requests.previous_page_number }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-chevron-left"></i>
+                        </span>
+                    </li>
+                {% endif %}
+
+                <!-- Page numbers -->
+                {% for page_num in requests.paginator.page_range %}
+                    {% if page_num == 1 or page_num == requests.paginator.num_pages or page_num == requests.number %}
+                        <li class="page-item {% if requests.number == page_num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                        </li>
+                    {% elif page_num == requests.number|add:"-1" or page_num == requests.number|add:"1" %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                        </li>
+                    {% elif page_num == 2 and requests.number > 4 %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% elif page_num == requests.paginator.num_pages|add:"-1" and requests.number < requests.paginator.num_pages|add:"-3" %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Next button -->
+                {% if requests.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ requests.next_page_number }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Filter functionality
+function filterRequests() {
+    const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    
+    document.querySelectorAll('.request-row').forEach(row => {
+        const searchText = row.dataset.search;
+        const status = row.dataset.status;
+        const date = row.dataset.date;
+        
+        let showRow = true;
+        
+        // Search filter
+        if (searchQuery && !searchText.includes(searchQuery)) {
+            showRow = false;
+        }
+        
+        // Status filter
+        if (statusFilter && status !== statusFilter) {
+            showRow = false;
+        }
+        
+        // Date filter
+        if (dateFilter && date !== dateFilter) {
+            showRow = false;
+        }
+        
+        row.style.display = showRow ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+    filterRequests();
+}
+
+// Event listeners
+document.getElementById('searchInput').addEventListener('keyup', filterRequests);
+document.getElementById('statusFilter').addEventListener('change', filterRequests);
+document.getElementById('dateFilter').addEventListener('change', filterRequests);
+
+// Animation
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.request-row');
+    rows.forEach((row, index) => {
+        row.style.animationDelay = `${index * 0.05}s`;
+        row.classList.add('fade-in-up');
+    });
+});
+</script>
+
+<style>
+.item-info .item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+}
+
+.item-info .item-category {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--bg-light);
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    display: inline-block;
+    margin-top: 0.25rem;
+}
+
+.quantity-badge {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.reason-text {
+    max-width: 200px;
+    cursor: help;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.status-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+
+.status-approved {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.status-rejected {
+    background: linear-gradient(135deg, #dc3545, #e83e8c);
+    color: white;
+}
+
+.status-pending {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: white;
+}
+
+.status-issued {
+    background: linear-gradient(135deg, #007bff, #6610f2);
+    color: white;
+}
+
+.status-unknown {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+}
+
+.date-info {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.date-info .time-info {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.125rem;
+}
+
+.request-row {
+    transition: all 0.3s ease;
+}
+
+.request-row:hover {
+    background: var(--hover-bg);
+    transform: translateX(4px);
+}
+</style>
 {% endblock %}

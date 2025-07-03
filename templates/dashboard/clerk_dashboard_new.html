@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% block title %}Clerk Dashboard{% endblock %}
+{% block breadcrumb %}Clerk Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Header Section -->
+    <div class="hero-section mb-4">
+        <div class="card border-0 bg-gradient">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h1 class="hero-title">Welcome back, {{ user.get_full_name|default:user.username }}!</h1>
+                        <p class="hero-subtitle">Manage inventory, process requests, and maintain records efficiently</p>
+                    </div>
+                    <div class="col-lg-4 text-end">
+                        <div class="hero-stats">
+                            <div class="quick-stat">
+                                <h3>{{ pending_requests_count }}</h3>
+                                <span>Pending Requests</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards Row -->
+    <div class="stats-grid mb-4">
+        <div class="row g-4">
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="stat-card stat-card-primary">
+                    <div class="stat-icon">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">{{ total_items }}</h3>
+                        <p class="stat-label">Total Items</p>
+                        <div class="stat-change">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>12% from last month</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="stat-card stat-card-warning">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">{{ pending_requests_count }}</h3>
+                        <p class="stat-label">Pending Requests</p>
+                        <div class="stat-change">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>8% from yesterday</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="stat-card stat-card-success">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">{{ low_stock_count }}</h3>
+                        <p class="stat-label">Low Stock Items</p>
+                        <div class="stat-change">
+                            <i class="fas fa-minus"></i>
+                            <span>No change</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="stat-card stat-card-info">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">{{ today_requests_count }}</h3>
+                        <p class="stat-label">Today's Requests</p>
+                        <div class="stat-change">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>15% from yesterday</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row g-4">
+        <!-- Recent Requests Section -->
+        <div class="col-xl-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-list-alt me-2"></i>Recent Requests
+                        </h5>
+                        <a href="/manage-requests/" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye me-1"></i>View All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_requests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Requested By</th>
+                                    <th>Quantity</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in recent_requests %}
+                                <tr>
+                                    <td>
+                                        <div class="item-info">
+                                            <span class="item-name">{{ request.item.name }}</span>
+                                            <small class="item-category">{{ request.item.category }}</small>
+                                        </div>
+                                    </td>
+                                    <td>{{ request.user.get_full_name|default:request.user.username }}</td>
+                                    <td>
+                                        <span class="quantity-badge">{{ request.quantity }}</span>
+                                    </td>
+                                    <td>
+                                        {% if request.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% elif request.status == 'approved' %}
+                                        <span class="badge bg-success">Approved</span>
+                                        {% elif request.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ request.request_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if request.status == 'pending' %}
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-success btn-sm" onclick="approveRequest({{ request.id }})">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" onclick="rejectRequest({{ request.id }})">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No recent requests</h6>
+                        <p class="text-muted mb-0">All requests have been processed</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions & Low Stock -->
+        <div class="col-xl-4">
+            <!-- Quick Actions Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/add-item/" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Add New Item
+                        </a>
+                        <a href="/manage-requests/" class="btn btn-outline-primary">
+                            <i class="fas fa-tasks me-2"></i>Manage Requests
+                        </a>
+                        <a href="/show-all-items/" class="btn btn-outline-info">
+                            <i class="fas fa-boxes me-2"></i>View All Items
+                        </a>
+                        <a href="/issue-items/" class="btn btn-outline-success">
+                            <i class="fas fa-hand-holding me-2"></i>Issue Items
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Low Stock Alert -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Low Stock Alert
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if low_stock_items %}
+                    <div class="low-stock-list">
+                        {% for item in low_stock_items %}
+                        <div class="low-stock-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ item.name }}</h6>
+                                    <small class="text-muted">{{ item.category }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-warning">{{ item.quantity }} left</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <a href="/show-all-items/?filter=low-stock" class="btn btn-sm btn-outline-warning w-100">
+                            <i class="fas fa-eye me-1"></i>View All Low Stock
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                        <p class="mb-0 text-muted">All items are well stocked!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveRequest(requestId) {
+    if (confirm('Are you sure you want to approve this request?')) {
+        // Add your approval logic here
+        console.log('Approving request:', requestId);
+    }
+}
+
+function rejectRequest(requestId) {
+    if (confirm('Are you sure you want to reject this request?')) {
+        // Add your rejection logic here
+        console.log('Rejecting request:', requestId);
+    }
+}
+
+// Animation for stat cards
+document.addEventListener('DOMContentLoaded', function() {
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('animate-fade-in-up');
+    });
+});
+</script>
+
+<style>
+.item-info .item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+}
+
+.item-info .item-category {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.quantity-badge {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.low-stock-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.low-stock-item:last-child {
+    border-bottom: none;
+}
+
+@keyframes animate-fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in-up {
+    animation: animate-fade-in-up 0.6s ease forwards;
+}
+</style>
+{% endblock %}

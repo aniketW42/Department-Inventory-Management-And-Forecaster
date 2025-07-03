@@ -10,28 +10,62 @@ from .utils import is_clerk
 from django.contrib.auth.models import User
 @login_required
 def show_all_items(request):
+    # Get base queryset
     items = InventoryItem.objects.all()
-
-    paginator = Paginator(items, 10)
+    
+    # Apply search filter
+    search_query = request.GET.get('search', '')
+    if search_query:
+        items = items.filter(
+            name__icontains=search_query
+        ) | items.filter(
+            description__icontains=search_query
+        )
+    
+    # Apply category filter
+    category_filter = request.GET.get('category', '')
+    if category_filter:
+        items = items.filter(category=category_filter)
+    
+    # Apply stock status filter
+    stock_status = request.GET.get('stock_status', '')
+    if stock_status == 'in_stock':
+        items = items.filter(quantity__gt=10)
+    elif stock_status == 'low_stock':
+        items = items.filter(quantity__gt=0, quantity__lte=10)
+    elif stock_status == 'out_of_stock':
+        items = items.filter(quantity=0)
+    
+    # Calculate statistics for all items (not filtered)
+    all_items = InventoryItem.objects.all()
+    total_items = all_items.count()
+    in_stock_count = all_items.filter(quantity__gt=10).count()
+    low_stock_count = all_items.filter(quantity__gt=0, quantity__lte=10).count()
+    out_of_stock_count = all_items.filter(quantity=0).count()
+    
+    # Order items
+    items = items.order_by('-date_added')
+    
+    # Pagination
+    paginator = Paginator(items, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
     
-    in_stock_items = items.filter(quantity__gte=5).count()   # Only items with good stock
-    low_stock_items = items.filter(quantity__gt=0, quantity__lt=10).count()
-    out_of_stock_items = items.filter(quantity=0).count()
-
-    stock_info = {
-        'in_stock': in_stock_items,
-        'low_stock': low_stock_items,
-        'out_stock': out_of_stock_items,
-    }
     categories = InventoryItem.CATEGORY_CHOICES
-    return render(request, 'inventory/show_all_items.html', {
+    
+    context = {
         'items': page_obj,
-        'stock_info': stock_info,
+        'total_items': total_items,
+        'in_stock_count': in_stock_count,
+        'low_stock_count': low_stock_count,
+        'out_of_stock_count': out_of_stock_count,
         'categories': categories,
-    })
+        'search_query': search_query,
+        'current_category': category_filter,
+        'current_stock_status': stock_status,
+    }
+    
+    return render(request, 'inventory/show_all_items.html', context)
 
 @login_required
 @require_POST

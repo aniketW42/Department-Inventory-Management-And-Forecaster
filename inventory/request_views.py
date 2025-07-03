@@ -14,8 +14,12 @@ from django.utils import timezone
 
 @login_required
 def request_item_page(request):
-    items = InventoryItem.objects.filter(quantity__gt=0)
-    return render(request, 'requests/request_item.html', {'items': items})
+    items = InventoryItem.objects.all().order_by('name')
+    categories = InventoryItem.objects.values_list('category', flat=True).distinct()
+    return render(request, 'requests/request_item.html', {
+        'items': items,
+        'categories': categories
+    })
 
 @login_required
 def request_history(request):
@@ -37,19 +41,44 @@ def request_history(request):
 @login_required
 def view_all_requests(request):
     requests = ItemRequest.objects.all().order_by('-request_date')
-    return render(request, 'requests/view_requests.html', {'requests': requests})
+    
+    # Calculate statistics
+    pending_count = requests.filter(status='pending').count()
+    approved_count = requests.filter(status='approved').count()
+    issued_count = requests.filter(status='issued').count()
+    rejected_count = requests.filter(status='rejected').count()
+    
+    return render(request, 'requests/view_requests.html', {
+        'requests': requests,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'issued_count': issued_count,
+        'rejected_count': rejected_count,
+    })
 
 @login_required
 def view_requests(request, user_id):
-    requests = ItemRequest.objects.filter( user__id = user_id )
-   
-    user = User.objects.filter(id = user_id).first
-    paginator = Paginator(requests, 20)  # Show 10 requests per page
+    requests = ItemRequest.objects.filter(user__id=user_id).order_by('-request_date')
+    user = User.objects.filter(id=user_id).first()
+    
+    # Calculate statistics for this user
+    pending_count = requests.filter(status='pending').count()
+    approved_count = requests.filter(status='approved').count()
+    issued_count = requests.filter(status='issued').count()
+    rejected_count = requests.filter(status='rejected').count()
+    paginator = Paginator(requests, 20)  # Show 20 requests per page
 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    return render(request, 'requests/view_requests.html', {'requser':user, 'requests': page_obj})
+    return render(request, 'requests/view_requests.html', {
+        'requser': user, 
+        'requests': page_obj,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'issued_count': issued_count,
+        'rejected_count': rejected_count,
+    })
 
 @user_passes_test(is_hod or is_clerk)
 def manage_requests(request):

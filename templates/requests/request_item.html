@@ -1,67 +1,179 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container mb-4">
-    <div class="col">
-        <h1 class="h3 mb-0 fw-bold" style="color: #343a40;">Request Inventory Item</h1>
-        <p class="mb-0" style="color: #6c757d;">Easily request items from the inventory for your needs</p>
+<div class="page-header">
+    <div class="page-header-content">
+        <h1 class="page-title">
+            <i class="fas fa-shopping-cart me-2"></i>
+            Request Inventory Items
+        </h1>
+        <p class="page-subtitle">Browse and request items from the department inventory</p>
     </div>
-    <input type="text" class="form-control my-3" placeholder="Search items..." id="searchInput">
+</div>
 
-    <table class="table table-hover" id="itemsTable">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Quantity Available</th>
-                <th>Category</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-            <tr>
-                <td>{{ item.name }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ item.category }}</td>
-                <td>
+<div class="content-container">
+    <!-- Search and Filter Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-6">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="form-control search-input" placeholder="Search items by name or category..." id="searchInput">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="categoryFilter">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="stockFilter">
+                        <option value="">All Items</option>
+                        <option value="in-stock">In Stock Only</option>
+                        <option value="low-stock">Low Stock</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Grid -->
+    <div class="row" id="itemsGrid">
+        {% for item in items %}
+        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4 item-card" 
+             data-name="{{ item.name|lower }}" 
+             data-category="{{ item.category }}" 
+             data-quantity="{{ item.quantity }}">
+            <div class="card inventory-item-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">{{ item.name }}</h6>
+                    <div class="item-status">
+                        {% if item.quantity > 10 %}
+                        <span class="badge status-badge status-success">
+                            <i class="fas fa-check-circle me-1"></i>In Stock
+                        </span>
+                        {% elif item.quantity > 0 %}
+                        <span class="badge status-badge status-warning">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Low Stock
+                        </span>
+                        {% else %}
+                        <span class="badge status-badge status-danger">
+                            <i class="fas fa-times-circle me-1"></i>Out of Stock
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="item-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Category:</span>
+                            <span class="detail-value">{{ item.category }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Available:</span>
+                            <span class="detail-value quantity-display">{{ item.quantity }} units</span>
+                        </div>
+                        {% if item.description %}
+                        <div class="detail-row">
+                            <span class="detail-label">Description:</span>
+                            <span class="detail-value">{{ item.description|truncatewords:10 }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer">
                     {% if item.quantity > 0 %}
-                    <button class="btn btn-sm btn-primary" onclick="openRequestModal({{ item.id }}, '{{ item.name }}', {{ item.quantity }})">
-                        Request
+                    <button class="btn btn-primary btn-request w-100" 
+                            onclick="openRequestModal({{ item.id }}, '{{ item.name }}', {{ item.quantity }}, '{{ item.category }}')">
+                        <i class="fas fa-plus me-2"></i>Request Item
                     </button>
                     {% else %}
-                    <span class="badge bg-secondary">Out of stock</span>
+                    <button class="btn btn-secondary w-100" disabled>
+                        <i class="fas fa-ban me-2"></i>Out of Stock
+                    </button>
                     {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Items Available</h5>
+                    <p class="text-muted">There are currently no items in the inventory to request.</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
 <!-- Request Modal -->
 <div class="modal fade" id="requestModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <form method="POST" action="{% url 'request_item_submit' %}">
             {% csrf_token %}
             <input type="hidden" id="modalItemId" name="item_id">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Request Item: <span id="modalItemName"></span></h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Request Item: <span id="modalItemName" class="text-primary"></span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Available Quantity: <span id="modalItemQty"></span></p>
-                    <div class="mb-3">
-                        <label>Quantity to Request</label>
-                        <input type="number" class="form-control" name="quantity" min="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Reason</label>
-                        <textarea class="form-control" name="reason" rows="3" required></textarea>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <h6 class="info-title">Item Information</h6>
+                                <div class="info-item">
+                                    <span class="info-label">Name:</span>
+                                    <span class="info-value" id="modalItemNameDisplay"></span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Category:</span>
+                                    <span class="info-value" id="modalItemCategory"></span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Available Quantity:</span>
+                                    <span class="info-value text-success fw-bold" id="modalItemQty"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">Quantity to Request <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="adjustQuantity(-1)">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" class="form-control text-center" name="quantity" id="requestQuantity" min="1" required>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="adjustQuantity(1)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Maximum available: <span id="maxQuantity"></span></div>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">Reason for Request <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="reason" rows="4" 
+                                          placeholder="Please provide a detailed reason for requesting this item..." required></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" type="submit">Submit Request</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i>Submit Request
+                    </button>
                 </div>
             </div>
         </form>
@@ -69,30 +181,213 @@
 </div>
 
 <script>
-function openRequestModal(id, name, qty) {
+let maxAvailableQuantity = 0;
+
+function openRequestModal(id, name, qty, category) {
     document.getElementById('modalItemId').value = id;
     document.getElementById('modalItemName').textContent = name;
-    document.getElementById('modalItemQty').textContent = qty;
+    document.getElementById('modalItemNameDisplay').textContent = name;
+    document.getElementById('modalItemCategory').textContent = category;
+    document.getElementById('modalItemQty').textContent = qty + ' units';
+    document.getElementById('maxQuantity').textContent = qty;
+    document.getElementById('requestQuantity').value = 1;
+    document.getElementById('requestQuantity').max = qty;
+    maxAvailableQuantity = qty;
+    
     new bootstrap.Modal(document.getElementById('requestModal')).show();
 }
 
+function adjustQuantity(change) {
+    const quantityInput = document.getElementById('requestQuantity');
+    const currentValue = parseInt(quantityInput.value) || 1;
+    const newValue = currentValue + change;
+    
+    if (newValue >= 1 && newValue <= maxAvailableQuantity) {
+        quantityInput.value = newValue;
+    }
+}
+
+// Search and filter functionality
 document.getElementById('searchInput').addEventListener('keyup', function () {
-    const query = this.value.toLowerCase();
-    document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
-        const name = row.cells[0].textContent.toLowerCase();
-        row.style.display = name.includes(query) ? '' : 'none';
+    filterItems();
+});
+
+document.getElementById('categoryFilter').addEventListener('change', function () {
+    filterItems();
+});
+
+document.getElementById('stockFilter').addEventListener('change', function () {
+    filterItems();
+});
+
+function filterItems() {
+    const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const stockFilter = document.getElementById('stockFilter').value;
+    
+    document.querySelectorAll('.item-card').forEach(card => {
+        const name = card.dataset.name;
+        const category = card.dataset.category;
+        const quantity = parseInt(card.dataset.quantity);
+        
+        let showCard = true;
+        
+        // Search filter
+        if (searchQuery && !name.includes(searchQuery) && !category.toLowerCase().includes(searchQuery)) {
+            showCard = false;
+        }
+        
+        // Category filter
+        if (categoryFilter && category !== categoryFilter) {
+            showCard = false;
+        }
+        
+        // Stock filter
+        if (stockFilter) {
+            if (stockFilter === 'in-stock' && quantity === 0) {
+                showCard = false;
+            } else if (stockFilter === 'low-stock' && quantity > 10) {
+                showCard = false;
+            }
+        }
+        
+        card.style.display = showCard ? '' : 'none';
+    });
+}
+
+// Add animation to cards
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.inventory-item-card');
+    cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('fade-in-up');
     });
 });
 </script>
-{% endblock %}
-{% comment %} {% extends 'base.html' %}
 
-{% block content %}
-<h3>Request Item: {{ item.name }}</h3>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Submit Request</button>
-    <a href="{% url 'faculty_dashboard' %}" class="btn btn-secondary">Cancel</a>
-</form>
-{% endblock %} {% endcomment %}
+<style>
+.inventory-item-card {
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+}
+
+.inventory-item-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.item-status .status-badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+
+.status-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.status-warning {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: white;
+}
+
+.status-danger {
+    background: linear-gradient(135deg, #dc3545, #e83e8c);
+    color: white;
+}
+
+.item-details .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.item-details .detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.quantity-display {
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.btn-request {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-request:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.info-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.info-title {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.info-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fade-in-up 0.6s ease forwards;
+}
+</style>
+{% endblock %}

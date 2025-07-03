@@ -23,12 +23,35 @@ def home(request):
 @login_required
 @user_passes_test(is_clerk)
 def clerk_dashboard(request):
-    recent_requests = ItemRequest.objects.filter().order_by('-request_date')[:5]
-    recent_approved_requests = ItemRequest.objects.filter(status = 'approved').order_by('-request_date')[:5]
+    # Get request statistics
+    total_requests = ItemRequest.objects.count()
+    pending_count = ItemRequest.objects.filter(status='pending').count()
+    approved_count = ItemRequest.objects.filter(status='approved').count()
+    issued_count = ItemRequest.objects.filter(status='issued').count()
+    rejected_count = ItemRequest.objects.filter(status='rejected').count()
+    
+    # Get inventory statistics
+    total_items = InventoryItem.objects.count()
+    low_stock_count = InventoryItem.objects.filter(quantity__lte=10, quantity__gt=0).count()
+    out_of_stock_count = InventoryItem.objects.filter(quantity=0).count()
+    in_stock_count = InventoryItem.objects.filter(quantity__gt=10).count()
+    
+    # Get recent requests for the table
+    recent_requests = ItemRequest.objects.select_related('item', 'user').order_by('-request_date')[:10]
+    recent_approved_requests = ItemRequest.objects.filter(status='approved').select_related('item', 'user').order_by('-request_date')[:10]
 
     context = {
         'recent_requests': recent_requests,
-        'recent_approved_requests':recent_approved_requests
+        'recent_approved_requests': recent_approved_requests,
+        'total_requests': total_requests,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'issued_count': issued_count,
+        'rejected_count': rejected_count,
+        'total_items': total_items,
+        'low_stock_count': low_stock_count,
+        'out_of_stock_count': out_of_stock_count,
+        'in_stock_count': in_stock_count,
     }
     return render(request, 'dashboard/clerk_dashboard.html', context)
 
@@ -45,6 +68,12 @@ def hod_dashboard(request):
     issued_requests = ItemRequest.objects.filter(status='issued').count()
     returned_requests = ItemRequest.objects.filter(status='returned').count()
 
+    # Add user statistics
+    total_users = User.objects.count()
+    faculty_users = User.objects.filter(groups__name='Faculty').count()
+    clerk_users = User.objects.filter(groups__name='Clerk').count()
+    hod_users = User.objects.filter(groups__name='HOD').count()
+
     recent_requests = ItemRequest.objects.all().order_by('-request_date')[:5]
 
     context = {
@@ -54,6 +83,10 @@ def hod_dashboard(request):
         'rejected_requests': rejected_requests,
         'issued_requests':issued_requests,
         'returned_requests':returned_requests,
+        'total_users': total_users,
+        'faculty_users': faculty_users,
+        'clerk_users': clerk_users,
+        'hod_users': hod_users,
         'recent_requests': recent_requests,
     }
     return render(request, 'dashboard/hod_dashboard.html', context)

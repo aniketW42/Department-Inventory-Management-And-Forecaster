@@ -1,0 +1,701 @@
+{% extends 'base.html' %}
+{% block title %}Clerk Dashboard{% endblock %}
+{% block breadcrumb %}Clerk Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Header Section -->
+    <div class="hero-section mb-4">
+        <div class="card border-0 bg-gradient">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="hero-avatar me-3">
+                                <i class="bi bi-person-workspace fs-1"></i>
+                            </div>
+                            <div>
+                                <h1 class="mb-1 text-white fw-bold">Welcome back, {{ user.get_full_name|default:user.username }}!</h1>
+                                <p class="text-white-50 mb-0 fs-5">Clerk Dashboard • {{ "now"|date:"l, F j, Y" }}</p>
+                            </div>
+                        </div>
+                        <div class="quick-stats">
+                            <div class="row g-3">
+                                <div class="col-auto">
+                                    <div class="stat-badge">
+                                        <i class="bi bi-clock-history me-2"></i>
+                                        <span>{{ pending_count }} Pending</span>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="stat-badge">
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        <span>{{ approved_count }} Ready to Issue</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="{% url 'request_item' %}" class="btn btn-light btn-lg hover-lift">
+                            <i class="bi bi-plus-circle me-2"></i>Request Item
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="stats-grid mb-4">
+        <div class="stats-card primary">
+            <div class="stats-icon bg-primary">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="stats-value">{{ pending_count }}</div>
+            <div class="stats-label">Pending Requests</div>
+            <div class="stats-trend positive">
+                <i class="bi bi-arrow-up"></i>
+                <span>+12% from last week</span>
+            </div>
+        </div>
+
+        <div class="stats-card success">
+            <div class="stats-icon bg-success">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stats-value">{{ approved_count }}</div>
+            <div class="stats-label">Ready to Issue</div>
+            <div class="stats-trend positive">
+                <i class="bi bi-arrow-up"></i>
+                <span>+8% from last week</span>
+            </div>
+        </div>
+
+        <div class="stats-card info">
+            <div class="stats-icon bg-info">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="stats-value">{{ issued_count }}</div>
+            <div class="stats-label">Items Issued</div>
+            <div class="stats-trend positive">
+                <i class="bi bi-arrow-up"></i>
+                <span>+15% from last week</span>
+            </div>
+        </div>
+
+        <div class="stats-card warning">
+            <div class="stats-icon bg-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="stats-value">{{ low_stock_count }}</div>
+            <div class="stats-label">Low Stock Items</div>
+            <div class="stats-trend negative">
+                <i class="bi bi-arrow-down"></i>
+                <span>Needs attention</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Requests Management Section -->
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card hover-lift">
+                <div class="card-header">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-1">Request Management</h5>
+                            <small class="text-muted">Manage and track item requests</small>
+                        </div>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'manage_requests' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-gear me-1"></i>Manage All
+                            </a>
+                            <a href="{% url 'view_all_requests' %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-list me-1"></i>View All
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <!-- Enhanced Tab Navigation -->
+                    <ul class="nav nav-tabs nav-tabs-modern" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#all-requests" type="button">
+                                <i class="bi bi-list-ul me-2"></i>
+                                <span>Recent Requests</span>
+                                <span class="badge badge-secondary ms-2">{{ recent_requests|length }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#pending-requests" type="button">
+                                <i class="bi bi-clock-history me-2"></i>
+                                <span>Pending</span>
+                                <span class="badge badge-warning ms-2">{{ pending_count }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#approved-requests" type="button">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <span>Ready to Issue</span>
+                                <span class="badge badge-success ms-2">{{ approved_count }}</span>
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- All Requests Tab -->
+                        <div class="tab-pane fade show active" id="all-requests">
+                            <div class="table-responsive">
+                                <table class="table table-modern">
+                                    <thead>
+                                        <tr>
+                                            <th><i class="bi bi-box me-2"></i>Item</th>
+                                            <th><i class="bi bi-person me-2"></i>Requested By</th>
+                                            <th><i class="bi bi-hash me-2"></i>Quantity</th>
+                                            <th><i class="bi bi-boxes me-2"></i>Available</th>
+                                            <th><i class="bi bi-calendar me-2"></i>Date</th>
+                                            <th><i class="bi bi-flag me-2"></i>Status</th>
+                                            <th><i class="bi bi-three-dots me-2"></i>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for req in recent_requests %}
+                                        <tr class="fade-in" style="animation-delay: {{ forloop.counter0|add:1 }}00ms">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="item-icon me-3">
+                                                        <i class="bi bi-box-seam"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold">{{ req.item.name }}</div>
+                                                        <small class="text-muted">{{ req.item.category|capfirst }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="user-avatar-sm me-2">
+                                                        {{ req.user.username|first|upper }}
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium">{{ req.user.get_full_name|default:req.user.username }}</div>
+                                                        <small class="text-muted">{{ req.user.username }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge badge-primary">{{ req.quantity }}</span></td>
+                                            <td>
+                                                <span class="{% if req.item.quantity < req.quantity %}text-danger{% elif req.item.quantity <= req.item.reorder_level %}text-warning{% else %}text-success{% endif %} fw-semibold">
+                                                    {{ req.item.quantity }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="text-muted">{{ req.request_date|date:"M j, Y" }}</div>
+                                                <small class="text-muted">{{ req.request_date|date:"g:i A" }}</small>
+                                            </td>
+                                            <td>
+                                                {% if req.status == "pending" %}
+                                                <span class="badge badge-warning">
+                                                    <i class="bi bi-clock me-1"></i>Pending
+                                                </span>
+                                                {% elif req.status == "approved" %}
+                                                <span class="badge badge-success">
+                                                    <i class="bi bi-check-circle me-1"></i>Approved
+                                                </span>
+                                                {% elif req.status == "issued" %}
+                                                <span class="badge badge-primary">
+                                                    <i class="bi bi-box-arrow-up me-1"></i>Issued
+                                                </span>
+                                                {% elif req.status == "rejected" %}
+                                                <span class="badge badge-danger">
+                                                    <i class="bi bi-x-circle me-1"></i>Rejected
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-primary" data-bs-toggle="tooltip" title="View Details">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    {% if req.status == "pending" %}
+                                                    <button class="btn btn-outline-success" data-bs-toggle="tooltip" title="Quick Approve">
+                                                        <i class="bi bi-check"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="7" class="text-center py-5">
+                                                <div class="empty-state">
+                                                    <i class="bi bi-inbox fs-1 text-muted mb-3"></i>
+                                                    <h6 class="text-muted">No requests found</h6>
+                                                    <p class="text-muted">All caught up! No recent requests to display.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pending Requests Tab -->
+                        <div class="tab-pane fade" id="pending-requests">
+                            <div class="table-responsive">
+                                <table class="table table-modern">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Requested By</th>
+                                            <th>Quantity</th>
+                                            <th>Available</th>
+                                            <th>Date</th>
+                                            <th>Priority</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for req in recent_requests %}
+                                            {% if req.status == "pending" %}
+                                            <tr class="fade-in">
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="item-icon me-3">
+                                                            <i class="bi bi-box-seam"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-semibold">{{ req.item.name }}</div>
+                                                            <small class="text-muted">{{ req.item.category|capfirst }}</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="user-avatar-sm me-2">
+                                                            {{ req.user.username|first|upper }}
+                                                        </div>
+                                                        {{ req.user.get_full_name|default:req.user.username }}
+                                                    </div>
+                                                </td>
+                                                <td><span class="badge badge-primary">{{ req.quantity }}</span></td>
+                                                <td>
+                                                    <span class="{% if req.item.quantity < req.quantity %}text-danger{% elif req.item.quantity <= req.item.reorder_level %}text-warning{% else %}text-success{% endif %} fw-semibold">
+                                                        {{ req.item.quantity }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ req.request_date|date:"M j, Y g:i A" }}</td>
+                                                <td>
+                                                    {% if req.item.quantity < req.quantity %}
+                                                    <span class="badge badge-danger">High</span>
+                                                    {% else %}
+                                                    <span class="badge badge-secondary">Normal</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-success" data-bs-toggle="tooltip" title="Approve">
+                                                            <i class="bi bi-check"></i>
+                                                        </button>
+                                                        <button class="btn btn-danger" data-bs-toggle="tooltip" title="Reject">
+                                                            <i class="bi bi-x"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="7" class="text-center py-5">
+                                                <div class="empty-state">
+                                                    <i class="bi bi-check-circle fs-1 text-success mb-3"></i>
+                                                    <h6 class="text-muted">No pending requests</h6>
+                                                    <p class="text-muted">Great! All requests have been processed.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Approved Requests Tab -->
+                        <div class="tab-pane fade" id="approved-requests">
+                            <div class="table-responsive">
+                                <table class="table table-modern">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Requested By</th>
+                                            <th>Quantity</th>
+                                            <th>Available</th>
+                                            <th>Date</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for req in recent_approved_requests %}
+                                        <tr class="fade-in">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="item-icon me-3">
+                                                        <i class="bi bi-box-seam"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold">{{ req.item.name }}</div>
+                                                        <small class="text-muted">{{ req.item.category|capfirst }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="user-avatar-sm me-2">
+                                                        {{ req.user.username|first|upper }}
+                                                    </div>
+                                                    {{ req.user.get_full_name|default:req.user.username }}
+                                                </div>
+                                            </td>
+                                            <td><span class="badge badge-primary">{{ req.quantity }}</span></td>
+                                            <td>
+                                                <span class="{% if req.item.quantity < req.quantity %}text-danger{% elif req.item.quantity <= req.item.reorder_level %}text-warning{% else %}text-success{% endif %} fw-semibold">
+                                                    {{ req.item.quantity }}
+                                                </span>
+                                            </td>
+                                            <td>{{ req.request_date|date:"M j, Y g:i A" }}</td>
+                                            <td>
+                                                <form method="post" action="{% url 'mark_as_issued' req.id %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button name="action" value="issue" class="btn btn-success btn-sm hover-lift">
+                                                        <i class="bi bi-box-arrow-up me-1"></i>Issue Item
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-center py-5">
+                                                <div class="empty-state">
+                                                    <i class="bi bi-box-seam fs-1 text-muted mb-3"></i>
+                                                    <h6 class="text-muted">No items ready to issue</h6>
+                                                    <p class="text-muted">Items will appear here once they are approved.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Enhanced Dashboard Styles */
+.hero-section .card {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-400) 100%);
+    border: none;
+    box-shadow: var(--shadow-xl);
+}
+
+.hero-avatar {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.stat-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+}
+
+.stats-card.primary { border-left: 4px solid var(--primary-500); }
+.stats-card.success { border-left: 4px solid var(--success-500); }
+.stats-card.info { border-left: 4px solid var(--info-500); }
+.stats-card.warning { border-left: 4px solid var(--warning-500); }
+
+.nav-tabs-modern {
+    border-bottom: 2px solid var(--border-color);
+    padding: 0 1.5rem;
+}
+
+.nav-tabs-modern .nav-link {
+    border: none;
+    border-radius: 0;
+    padding: 1rem 1.5rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    background: none;
+    border-bottom: 3px solid transparent;
+}
+
+.nav-tabs-modern .nav-link:hover {
+    border-bottom-color: var(--primary-300);
+    color: var(--primary-600);
+}
+
+.nav-tabs-modern .nav-link.active {
+    color: var(--primary-600);
+    border-bottom-color: var(--primary-600);
+    background: none;
+}
+
+.table-modern {
+    margin-bottom: 0;
+}
+
+.table-modern thead th {
+    border-bottom: 2px solid var(--border-color);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: var(--text-primary);
+    padding: 1.25rem 1.5rem;
+}
+
+.table-modern tbody td {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.item-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-600);
+}
+
+.user-avatar-sm {
+    width: 32px;
+    height: 32px;
+    background: var(--primary-100);
+    color: var(--primary-700);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.empty-state {
+    padding: 3rem 2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hero-section .row {
+        text-align: center;
+    }
+    
+    .hero-avatar {
+        margin: 0 auto 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .nav-tabs-modern .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+</style>
+
+                    <div class="tab-pane fade show active" id="all">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Requested By</th>
+                                        <th>Quantity</th>
+                                        <th>Available</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for req in recent_requests %}
+                                    <tr>
+                                        <td class="fw-medium">{{ req.item.name }}</td>
+                                        <td>{{ req.user.username }}</td>
+                                        <td>{{ req.quantity }}</td>
+                                        <td>{{ req.item.quantity }}</td>
+                                        <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
+                                        <td>
+                                            {% if req.status == "pending" %}
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                            {% elif req.status == "approved" %}
+                                            <span class="badge bg-success">Approved</span>
+                                            {% elif req.status == "issued" %}
+                                            <span class="badge bg-primary">Issued</span>
+                                            {% elif req.status == "rejected" %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Pending Requests Tab -->
+                    <div class="tab-pane fade" id="pending">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Requested By</th>
+                                        <th>Quantity</th>
+                                        <th>Available</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for req in recent_requests %}
+                                        {% if req.status == "pending" %}
+                                        <tr>
+                                            <td class="fw-medium">{{ req.item.name }}</td>
+                                            <td>{{ req.user.username }}</td>
+                                            <td>{{ req.quantity }}</td>
+                                            <td>{{ req.item.quantity }}</td>
+                                            <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
+                                        </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Approved Requests Tab -->
+                    <div class="tab-pane fade" id="approved">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Requested By</th>
+                                        <th>Quantity</th>
+                                        <th>Available</th>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for req in recent_approved_requests %}
+                                    <tr>
+                                        <td class="fw-medium">{{ req.item.name }}</td>
+                                        <td>{{ req.user.username }}</td>
+                                        <td>{{ req.quantity }}</td>
+                                        <td>{{ req.item.quantity }}</td>
+                                        <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
+                                        <td>
+                                            <form method="post" action="{% url 'mark_as_issued' req.id %}" class="d-flex gap-2">
+                                                {% csrf_token %}
+                                                <button name="action" value="issue" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check me-0"></i> Issue Item
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Global dark-mode style -->
+<style>
+    .dashboard-container {
+        padding: 0;
+    }
+
+    .card {
+        border-radius: 12px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .badge {
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    /* DARK MODE STYLES */
+    body.dark-mode .card,
+    .dark-mode .card {
+        background-color: #1e1e2f !important;
+        color: #f0f0f0 !important;
+    }
+
+    body.dark-mode .card-header {
+        background-color: #2c2c3e !important;
+    }
+
+    body.dark-mode .nav-tabs .nav-link {
+        color: #ccc;
+    }
+
+    body.dark-mode .nav-tabs .nav-link.active {
+        background-color: #333;
+        border-color: #444 #444 #222;
+        color: #fff;
+    }
+
+    body.dark-mode .table {
+        color: #fff;
+    }
+
+    body.dark-mode .table-light thead {
+        background-color: #2e2e3e !important;
+        color: #fff !important;
+    }
+</style>
+{% endblock %}
