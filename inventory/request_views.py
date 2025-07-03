@@ -10,6 +10,7 @@ from .utils import is_faculty, is_hod, is_clerk
 from notifications.utils import notify_user
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 @login_required
 def request_item_page(request):
@@ -59,41 +60,63 @@ def manage_requests(request):
 @require_POST
 def process_request(request, request_id):
     item_request = get_object_or_404(ItemRequest, id=request_id)
+
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('hod_dashboard')
+
     action = request.POST.get('action')
 
     if item_request.status != 'pending':
         messages.warning(request, "This request has already been processed.")
         return redirect('hod_dashboard')
 
-    if action == 'approve':
-        item = item_request.item
-        if item.quantity >= item_request.quantity:
-            item.quantity -= item_request.quantity
-            item.save()
+    item = item_request.item
 
-            item_request.status = 'approved'
-            item_request.processed_by = request.user
-            item_request.decision_date = datetime.now()
-            item_request.save()
-            notify_user(item_request.user, f"Your request for {item.name} has been approved by {request.user}.")
-            clerk_group = Group.objects.get(name='Clerk')
-            for clerk in clerk_group.user_set.all():
-                notify_user(clerk, f" {item_request.user}'s request for {item.name} has been approved by {request.user}.")
-            messages.success(request, "Request approved and inventory updated.")
+    if action == 'approve':
+        if item.quantity >= item_request.quantity:
+            try:
+                # Process approval
+                item_request.status = 'approved'
+                item_request.processed_by = request.user
+                item_request.decision_date = timezone.now()
+                item_request.save()
+
+                # item.quantity -= item_request.quantity
+                # item.save()
+
+                # Notifications
+                notify_user(item_request.user, f"Your request for '{item.name}' has been approved by {request.user.username}.")
+                clerk_group = Group.objects.get(name='Clerk')
+                for clerk in clerk_group.user_set.all():
+                    notify_user(clerk, f"{item_request.user.username}'s request for '{item.name}' has been approved by {request.user.username}.")
+
+                messages.success(request, "Request approved.")
+            except Exception as e:
+                # Rollback
+                item_request.status = 'pending'
+                item_request.processed_by = None
+                item_request.decision_date = None
+                item_request.save()
+
+                # Revert inventory only if already deducted
+                # item.refresh_from_db()  # In case partial save happened
+                messages.error(request, f"An error occurred while processing the request: {str(e)}")
         else:
             messages.error(request, "Not enough stock to approve this request.")
-            return redirect('hod_dashboard')
 
     elif action == 'reject':
         item_request.status = 'rejected'
         item_request.processed_by = request.user
+        item_request.decision_date = timezone.now()
         item_request.save()
-        notify_user(item_request.user, f"Your request for {item.item.name} has been rejected.")
+
+        notify_user(item_request.user, f"Your request for '{item.name}' has been rejected by {request.user.username}.")
         messages.info(request, "Request has been rejected.")
 
     else:
         messages.error(request, "Invalid action.")
-    
+
     return redirect('hod_dashboard')
 
 @login_required

@@ -19,7 +19,10 @@
                     <th>Issued Date</th>
                     <th>Last Maintenance Date</th>
                     {% if requser == request.user %}
+                    {% comment %} {% if requests.item.category == "non-consumable" %} {% endcomment %}
                     <th>Request Maintenance</th>
+                    
+                    {% comment %} {% endif %} {% endcomment %}
                     <th>Return Item</th>
                     {% endif %}
                 </tr>
@@ -32,12 +35,21 @@
                     <td>{{ item.request_date|date:"M d, Y" }}</td>
                     <td>{{ item.issued_date|date:"M d, Y" }}</td>
                     <td>{{ item.last_maintenance_date|date:"M d, Y" }}</td>
-                    {% if requser == request.user %}
+                    {% if requser == request.user  %}
+                    
                     <td>
+                        {% if item.item.needs_maintenance %}
                         <button type="button" class="btn btn-sm btn-outline-success" title="Request Maintenance" style="width: 40%;">
                             <i class="fas fa-wrench"></i>
                         </button>
+                        {% else %}
+                        <button type="button" class="btn btn-sm btn-outline-secondary" title="This item doesn't need maintenance" style="width: 40%;" data-bs-toggle="tooltip" data-bs-placement="top" disabled>
+                            <i class="fas fa-ban text-muted"></i>
+                        </button>
+                        
+                        {% endif %}
                     </td>
+                    
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-danger" title="Return Item" style="width: 50%;">
                             <i class="fas fa-undo-alt"></i>

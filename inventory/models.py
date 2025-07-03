@@ -73,8 +73,13 @@ class ItemRequest(models.Model):
     last_maintenance_date = models.DateField(null=True, blank=True)
 
     def clean(self):
-        if self.quantity > self.item.quantity:
-            raise ValidationError("Requested quantity exceeds available inventory.")
+        from django.db.models import F
+
+        # Refresh the item quantity to ensure the latest value is used
+        self.item.refresh_from_db()
+
+        # if self.quantity > self.item.quantity:
+        #     raise ValidationError("Requested quantity exceeds available inventory.")
         if self.status == 'issued':
             if not self.issued_date or not self.issued_by:
                 raise ValidationError("Issued date and issuer must be set when item is marked as issued.")

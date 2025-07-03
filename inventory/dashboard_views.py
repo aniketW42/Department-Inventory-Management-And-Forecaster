@@ -8,6 +8,7 @@ from datetime import datetime
 from .models import ItemRequest, InventoryItem 
 from django.core.paginator import Paginator
 from .utils import is_clerk, is_hod, is_faculty
+from django.utils import timezone
 
 def home(request):
     if is_clerk(request.user):
@@ -32,6 +33,7 @@ def clerk_dashboard(request):
     return render(request, 'dashboard/clerk_dashboard.html', context)
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.db import transaction
 
 @staff_member_required
 @user_passes_test(is_hod)
@@ -63,7 +65,7 @@ def faculty_dashboard(request):
     my_requests = ItemRequest.objects.filter(user=request.user).order_by('-request_date')
 
     # Pagination for items
-    items_paginator = Paginator(items, 100)  # Show 10 items per page
+    items_paginator = Paginator(items, 50)  
     items_page_number = request.GET.get('items_page')
     items_page = items_paginator.get_page(items_page_number)
 
@@ -87,23 +89,37 @@ def issue_items(request):
 @user_passes_test(is_clerk)
 @require_POST
 def mark_as_issued(request, request_id):
-    item_request = get_object_or_404(ItemRequest, id=request_id, status='approved')
-    
-    item = get_object_or_404(InventoryItem, id=item_request.item.id)
-    request_quantity = item_request.quantity
+    try:
+        with transaction.atomic():
+            # Get the approved item request
+            item_request = get_object_or_404(ItemRequest, id=request_id, status='approved')
 
-    if item.quantity >= request_quantity:
-        item.quantity -= request_quantity
-        item_request.last_maintenance_date = datetime.now()
-        item.save()
-        item_request.status = 'issued'
-        item_request.issued_date = datetime.now()
-        item_request.save()
-        messages.success(request, "Item marked as issued.")
-    else:
-        messages.error(request, "Not enough stock to issue the item.")
+            # Get the associated inventory item
+            item = item_request.item
+            request_quantity = item_request.quantity
 
-    return redirect('clerk_dashboard')  
+            # Check stock availability
+            if item.quantity < request_quantity:
+                messages.error(request, "Not enough stock to issue the item.")
+                return redirect('clerk_dashboard')
+            
+            # Deduct stock and update item
+            item.quantity -= request_quantity
+            item.save()
+
+            # Update request status and metadata
+            item_request.status = 'issued'
+            item_request.issued_date = timezone.now()
+            item_request.issued_by = request.user
+            item_request.last_maintenance_date = timezone.now()
+            item_request.save()
+
+            messages.success(request, "Item marked as issued.")
+
+    except Exception as e:
+        messages.error(request, f"An error occurred while issuing the item: {str(e)}")
+
+    return redirect('clerk_dashboard')
 
 @login_required
 @user_passes_test(is_hod)

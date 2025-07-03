@@ -77,7 +77,7 @@ def view_issued_items(request, id):
 
     requests = ItemRequest.objects.filter(user__id = id, status = 'issued')
     user = User.objects.filter(id=id).first
-    paginator = Paginator(requests, 20)  # Show 10 requests per page
+    paginator = Paginator(requests, 20) 
 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)

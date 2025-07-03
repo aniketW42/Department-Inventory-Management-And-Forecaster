@@ -74,7 +74,9 @@
                                             <span class="badge bg-warning text-dark">Pending</span>
                                             {% elif req.status == "approved" %}
                                             <span class="badge bg-success">Approved</span>
-                                            {% else %}
+                                            {% elif req.status == "issued" %}
+                                            <span class="badge bg-primary">Issued</span>
+                                            {% elif req.status == "rejected" %}
                                             <span class="badge bg-danger">Rejected</span>
                                             {% endif %}
                                         </td>
