@@ -4,10 +4,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.contrib import messages
-from .models import InventoryItem
+from .models import InventoryItem, ItemRequest
 from .forms import InventoryItemForm
 from .utils import is_clerk
-
+from django.contrib.auth.models import User
 @login_required
 def show_all_items(request):
     items = InventoryItem.objects.all()
@@ -70,3 +70,10 @@ def edit_item(request, pk):
     else:
         form = InventoryItemForm(instance=item)
     return render(request, 'inventory/add_edit_item.html', {'form': form, 'item': item})
+
+from django.db.models import Count
+def view_issued_items(request, id):
+
+    requests = ItemRequest.objects.filter(user__id = id, status = 'issued')
+    return render(request, 'user/view_issued_items.html' , {'items':requests})
+

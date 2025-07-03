@@ -30,7 +30,7 @@ def item_maintenance(request):
     # Add custom logic to check if maintenance is overdue based on last_maintenance_date or issued_date
     for item in issued_maintenance_items:
         # Ensure last_maintenance_date is a date object
-        last_maintenance_date = item.item.last_maintenance_date
+        last_maintenance_date = item.last_maintenance_date
         if last_maintenance_date and isinstance(last_maintenance_date, datetime.datetime):
             last_maintenance_date = last_maintenance_date.date()
 
@@ -71,7 +71,7 @@ def item_maintenance(request):
 @user_passes_test(is_clerk)
 def mark_maintained(request, item_id):
     try:
-        item = InventoryItem.objects.get(id=item_id)
+        item = ItemRequest.objects.get(id=item_id) #requestid
         item.last_maintenance_date = timezone.now()
         item.save()
         return JsonResponse({'success': True})
@@ -101,7 +101,7 @@ def user_item_maintenance(request):
     # Add custom logic to check if maintenance is overdue based on last_maintenance_date or issued_date
     for item in issued_maintenance_items:
         # Ensure last_maintenance_date is a date object
-        last_maintenance_date = item.item.last_maintenance_date
+        last_maintenance_date = item.last_maintenance_date #item.item.last...
         if last_maintenance_date and isinstance(last_maintenance_date, datetime.datetime):
             last_maintenance_date = last_maintenance_date.date()
 
@@ -111,18 +111,18 @@ def user_item_maintenance(request):
         # If there's a last_maintenance_date
         if last_maintenance_date:
             # Calculate overdue based on last_maintenance_date
-            if item.item.maintenance_interval_days is not None:
+            if item.maintenance_interval_days is not None:
                 days_since_last_maintenance = (today - last_maintenance_date).days
-                is_overdue = days_since_last_maintenance > item.item.maintenance_interval_days
+                is_overdue = days_since_last_maintenance > item.maintenance_interval_days
         else:
             # If there's no last_maintenance_date, calculate based on issued_date
-            if item.item.maintenance_interval_days is not None:
+            if item.maintenance_interval_days is not None:
                 # Ensure issued_date is a date object (convert to date if it's a datetime object)
                 issued_date = item.issued_date.date() if isinstance(item.issued_date, datetime.datetime) else item.issued_date
 
 
                 days_since_issued = (today - issued_date).days
-                is_overdue = days_since_issued > item.item.maintenance_interval_days
+                is_overdue = days_since_issued > item.maintenance_interval_days
 
         # Filter based on the filter_value ('due' or 'overdue')
         if filter_value == 'overdue' and is_overdue:

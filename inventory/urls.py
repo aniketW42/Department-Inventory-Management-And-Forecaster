@@ -44,6 +44,8 @@ urlpatterns = [
     # User Management
     path('create-user/', create_user, name='create_user'),
     path('manage-users/', manage_users, name='manage_users'),
+    path('view_issued_items/<int:id>', view_issued_items, name='view_issued_items'),
+
 
     # Reports
     path('reports/', reports, name='reports'),

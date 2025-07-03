@@ -2,7 +2,10 @@ from django.contrib import admin
 from .models import InventoryItem, ItemRequest, MaintenanceRequest
 # Register your models here.
 admin.site.register(InventoryItem)
-admin.site.register(ItemRequest)
+# admin.site.register(ItemRequest)
+@admin.register(ItemRequest)
+class ItemRequestAdmin(admin.ModelAdmin):
+    list_display = ['user', 'item', 'status', 'request_date', 'last_maintenance_date']
 admin.site.register(MaintenanceRequest)
 
 # @admin.register(InventoryItem)

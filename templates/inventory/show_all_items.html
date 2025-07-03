@@ -289,7 +289,7 @@
                             <td>
                                 {% if item.quantity <= 0 %}
                                 <span class="badge" style="background-color: #dc3545; color: white;">Out of Stock</span>
-                                {% elif item.quantity <= 10 %}
+                                {% elif item.quantity <= item.reorder_level %}
                                 <span class="badge" style="background-color: #ffc107; color: #343a40;">Low Stock</span>
                                 {% else %}
                                 <span class="badge" style="background-color: #28a745; color: white;">In Stock</span>

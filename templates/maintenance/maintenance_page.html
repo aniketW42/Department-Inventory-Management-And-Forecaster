@@ -89,16 +89,18 @@
                             <td>{{ req.user.get_full_name|default:req.user.username }}</td>
                             <td>{{ req.issued_date|date:"Y-m-d" }}</td>
                             <td>
-                                {% if req.item.last_maintenance_date %}
-                                    {{ req.item.last_maintenance_date|date:"Y-m-d" }}
+                                {% if req.last_maintenance_date %} 
+                                {% comment %} change from req.item {% endcomment %}
+                                    {{ req.last_maintenance_date|date:"Y-m-d" }}
                                 {% else %}
                                     <span class="text-muted">Not recorded</span>
                                 {% endif %}
                             </td>
                             <td>{{ req.item.maintenance_interval_days }}</td>
                             <td>
-                                {% if req.item.last_maintenance_date %}
-                                {% with remaining=req.item.last_maintenance_date|days_until_maintenance:req.item.maintenance_interval_days %}
+                                {% comment %} change from req.item {% endcomment %}
+                                {% if req.last_maintenance_date %}
+                                {% with remaining=req.last_maintenance_date|days_until_maintenance:req.item.maintenance_interval_days %}
                                     {% if remaining >= 0 %}
                                         <span class="badge bg-info text-dark">{{ remaining }} days</span>
                                     {% else %}
@@ -117,7 +119,7 @@
                             </td>
                             {% if user|in_group:'Clerk' %}
                             <td>
-                                <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmMaintenance({{ req.item.id }})">Mark Maintained</button>
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmMaintenance({{ req.id }})">Mark Maintained</button>
                             </td>
                             {% endif %}
                         </tr>

@@ -43,6 +43,7 @@
                             <th>Role</th>
                             <th>Date Joined</th>
                             <th>Requests</th>
+                            <th>Issued Items</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -58,6 +59,9 @@
                             <td>{{ user.date_joined|date:"Y-m-d" }}</td>
                             <td>
                                 <a href="{% url "view_requests" user.id %}" class="btn btn-sm btn-outline-primary">View Requests</a>
+                            </td>
+                            <td>
+                                <a href="{% url "view_issued_items" user.id %}" class="btn btn-sm btn-outline-primary">View</a>
                             </td>
                             <td class="text-end">
                                 <a href="{% url 'admin:auth_user_change' user.id %}" class="btn btn-sm btn-outline-primary">Edit</a>

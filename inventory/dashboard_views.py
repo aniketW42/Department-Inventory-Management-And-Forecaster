@@ -5,7 +5,7 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.contrib.auth.models import User
 from datetime import datetime
-from .models import ItemRequest, InventoryItem  # Ensure ItemRequest is defined in your models
+from .models import ItemRequest, InventoryItem 
 from django.core.paginator import Paginator
 from .utils import is_clerk, is_hod, is_faculty
 
@@ -22,19 +22,10 @@ def home(request):
 @login_required
 @user_passes_test(is_clerk)
 def clerk_dashboard(request):
-    # total_items = InventoryItem.objects.count()
-    # low_stock_items = InventoryItem.objects.filter(quantity__lt=5).count()  # Adjust threshold
-    # pending_requests = ItemRequest.objects.filter(user=request.user, status='pending').count()
-    # issued_items = ItemRequest.objects.filter( status='issued').count()
-
     recent_requests = ItemRequest.objects.filter().order_by('-request_date')[:5]
     recent_approved_requests = ItemRequest.objects.filter(status = 'approved').order_by('-request_date')[:5]
 
     context = {
-        # 'total_items': total_items,
-        # 'low_stock': low_stock_items,
-        # 'pending_requests': pending_requests,
-        # 'issued_items': issued_items,
         'recent_requests': recent_requests,
         'recent_approved_requests':recent_approved_requests
     }
@@ -103,7 +94,7 @@ def mark_as_issued(request, request_id):
 
     if item.quantity >= request_quantity:
         item.quantity -= request_quantity
-        item.last_maintenance_date = datetime.now()
+        item_request.last_maintenance_date = datetime.now()
         item.save()
         item_request.status = 'issued'
         item_request.issued_date = datetime.now()

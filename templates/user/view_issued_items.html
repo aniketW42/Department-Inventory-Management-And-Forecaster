@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Issued Date</th>
+        </tr>
+        {% for item in items %}
+        <tr>    
+            <td>{{forloop.counter}}</td>
+            <td>{{item.item}}</td>
+            <td>{{item.quantity}}</td>
+            <td>{{item.issued_date|date:"M d, Y"}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock content %}
