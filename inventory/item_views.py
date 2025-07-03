@@ -71,9 +71,14 @@ def edit_item(request, pk):
         form = InventoryItemForm(instance=item)
     return render(request, 'inventory/add_edit_item.html', {'form': form, 'item': item})
 
-from django.db.models import Count
+# from django.db.models import Count
+@login_required
 def view_issued_items(request, id):
 
     requests = ItemRequest.objects.filter(user__id = id, status = 'issued')
-    return render(request, 'user/view_issued_items.html' , {'items':requests})
+    user = User.objects.filter(id=id).first
+    paginator = Paginator(requests, 20)  # Show 10 requests per page
 
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'user/view_issued_items.html' , {'requser':user, 'requests':page_obj})

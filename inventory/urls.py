@@ -22,7 +22,8 @@ urlpatterns = [
     path('manage-requests/', manage_requests, name='manage_requests'),
     path('process-request/<int:request_id>/', process_request, name='process_request'),
     path('view-all-requests/', view_all_requests, name='view_all_requests'),
-    path('view_requests/<int:user_id>', view_requests, name='view_requests'),
+    path('manage-users/view_requests/<int:user_id>', view_requests, name='view_requests'),
+    path('view_my_requests/<int:user_id>', view_requests, name='view_my_requests'),
     path('request-history/', request_history, name='request_history'),
     path('request-item/', request_item_page, name='request_item'),
     path('submit-request/', submit_item_request, name='request_item_submit'),
@@ -44,15 +45,16 @@ urlpatterns = [
     # User Management
     path('create-user/', create_user, name='create_user'),
     path('manage-users/', manage_users, name='manage_users'),
-    path('view_issued_items/<int:id>', view_issued_items, name='view_issued_items'),
+    path('manage-users/view_issued_items/<int:id>', view_issued_items, name='view_issued_items'),
+    path('your-issued-items/<int:id>', view_issued_items, name='your_issued_items'),
 
 
     # Reports
     path('reports/', reports, name='reports'),
-    path('item-request-report/', item_request_report, name='item_request_report'),
-    path('export-request-report/', export_request_report, name='export_request_report'),
-    path('inventory-report/', inventory_report, name='inventory_report'),
-    path('user-report/', user_item_request_report, name='user_report'),
+    path('reports/item-request-report/', item_request_report, name='item_request_report'),
+    path('reports/item-request-report/export-request-report/', export_request_report, name='export_request_report'),
+    path('reports/inventory-report/', inventory_report, name='inventory_report'),
+    path('reports/user-report/', user_item_request_report, name='user_report'),
 
     # Maintenance
     path('item-maintenance/', item_maintenance, name='item_maintenance'),

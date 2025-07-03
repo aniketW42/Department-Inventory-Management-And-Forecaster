@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from .utils import is_clerk
 
-# @user_passes_test(is_clerk)
+@user_passes_test(is_clerk)
 def item_maintenance(request):
     # Get search query and filter value from GET parameters
     search_query = request.GET.get('q', '')

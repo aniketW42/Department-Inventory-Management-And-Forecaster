@@ -35,8 +35,7 @@ class InventoryItem(models.Model):
             raise ValidationError("Maintenance interval days must be set if the item needs maintenance.")
         if self.needs_maintenance and self.maintenance_interval_days <= 0:
             raise ValidationError("Maintenance interval days must be a positive integer.")
-        if self.last_maintenance_date and self.last_maintenance_date > timezone.now().date():
-            raise ValidationError("Last maintenance date cannot be in the future.")
+        
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -71,7 +70,7 @@ class ItemRequest(models.Model):
     processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="processor")
     issued_date = models.DateTimeField(null=True, blank=True)
     issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="issuer")
-    last_maintenance_date = models.DateField(default=timezone.now, null=True, blank=True)
+    last_maintenance_date = models.DateField(null=True, blank=True)
 
     def clean(self):
         if self.quantity > self.item.quantity:
@@ -92,6 +91,11 @@ class ItemRequest(models.Model):
                 raise ValidationError("Return date cannot be before issued date.")
         if self.decision_date and self.decision_date > timezone.now():
             raise ValidationError("Decision date cannot be in the future.")
+        if self.last_maintenance_date and self.last_maintenance_date > timezone.now().date():
+            raise ValidationError("Last maintenance date cannot be in the future.")
+        if self.last_maintenance_date and self.status != "issued":
+            raise ValidationError("Cannot set last maintenance date unless item is marked as issued.")
+
 
     def save(self, *args, **kwargs):
         self.full_clean()
