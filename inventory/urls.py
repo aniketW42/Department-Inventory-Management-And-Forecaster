@@ -23,10 +23,14 @@ urlpatterns = [
     path('process-request/<int:request_id>/', process_request, name='process_request'),
     path('view-all-requests/', view_all_requests, name='view_all_requests'),
     path('manage-users/view_requests/<int:user_id>', view_requests, name='view_requests'),
-    path('view_my_requests/<int:user_id>', view_requests, name='view_my_requests'),
+    path('view-my-requests/<int:user_id>', view_requests, name='view_my_requests'),
     path('request-history/', request_history, name='request_history'),
     path('request-item/', request_item_page, name='request_item'),
     path('submit-request/', submit_item_request, name='request_item_submit'),
+    path('request-return/<int:request_id>/', return_item_request, name='request_return'),
+    path('return-item/<int:request_id>', mark_as_returned, name = 'return_item'),
+    path('view-return-requests/>', return_requests_clerk, name = 'view_return_requests'),
+
 
     # Items Management
     path('inventory-items', show_all_items, name='inventory_items'),
@@ -60,4 +64,5 @@ urlpatterns = [
     path('item-maintenance/', item_maintenance, name='item_maintenance'),
     path('user-item-maintenance/', user_item_maintenance, name='user_item_maintenance'),
     path('mark-maintained/<int:item_id>/', mark_maintained, name='mark_maintained'),
+    path('maintenance/request/<int:item_id>/', request_maintenance, name='request_maintenance'),
 ]

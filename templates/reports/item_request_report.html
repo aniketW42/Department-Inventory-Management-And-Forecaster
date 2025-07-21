@@ -1,212 +1,161 @@
 {% extends "base.html" %}
 {% load auth_extras %}
-{% load sum_filters %}
-{% block title %}Monthly Item Request Report{% endblock %}
+{% block title %}Item Request Report{% endblock %}
 
 {% block content %}
 <div class="container mb-4">
     <div class="col">
-        <h1 class="h3 mb-0 fw-bold ">Item Request Report</h1>
-        <p class="mb-3 text-muted">Generate inventory item request reports.</p>
+        <h1 class="h3 mb-0 fw-bold">Item Request Report</h1>
+        <p class="text-muted">Generate inventory request reports by period or filter options.</p>
     </div>
+
     <div class="card shadow-sm">
-        
         <div class="card-body">
-            <!-- Filter Form -->
-            <form method="get" class="row g-3 mb-4" >
-                <!-- Report Type Selection -->
-                <div class="col-md-12 mb-3">
+            <!-- Report Filters -->
+            <form method="get" class="row g-3 mb-4">
+                <div class="col-md-12">
                     <label class="form-label fw-bold">Report Type</label>
-                    <div class="btn-group w-100" role="group">
-                        <input type="radio" class="btn-check" name="report_type" id="yearly" value="yearly" 
-                               {% if request.GET.report_type == 'yearly' or not request.GET.report_type %}checked{% endif %}>
+                    <div class="btn-group w-100">
+                        <input type="radio" class="btn-check" name="report_type" id="yearly" value="yearly" {% if request.GET.report_type == 'yearly' %}checked{% endif %}>
                         <label class="btn btn-outline-primary" for="yearly">Yearly</label>
-                        
-                        <input type="radio" class="btn-check" name="report_type" id="monthly" value="monthly" 
-                               {% if request.GET.report_type == 'monthly' or request.GET.report_type is None %}checked{% endif %}>
+
+                        <input type="radio" class="btn-check" name="report_type" id="monthly" value="monthly" {% if request.GET.report_type == 'monthly' or not request.GET.report_type %}checked{% endif %}>
                         <label class="btn btn-outline-primary" for="monthly">Monthly</label>
-                        
-                        <input type="radio" class="btn-check" name="report_type" id="custom" value="custom" 
-                               {% if request.GET.report_type == 'custom' %}checked{% endif %}>
+
+                        <input type="radio" class="btn-check" name="report_type" id="custom" value="custom" {% if request.GET.report_type == 'custom' %}checked{% endif %}>
                         <label class="btn btn-outline-primary" for="custom">Custom Range</label>
                     </div>
                 </div>
 
-                <!-- Date Selection (changes based on report type) -->
+                <!-- Dynamic Date Section -->
                 <div class="col-md-6 yearly-option" style="{% if request.GET.report_type != 'yearly' %}display: none;{% endif %}">
                     <label for="year" class="form-label fw-bold">Select Year</label>
-                    <select name="year" id="year" class="form-select form-select-sm shadow-sm" required>
-                        <option value="2020" {% if request.GET.year == '2020' %}selected{% endif %}>2020</option>
-                        <option value="2021" {% if request.GET.year == '2021' %}selected{% endif %}>2021</option>
-                        <option value="2022" {% if request.GET.year == '2022' %}selected{% endif %}>2022</option>
-                        <option value="2023" {% if request.GET.year == '2023' %}selected{% endif %}>2023</option>
-                        <option value="2024" {% if request.GET.year == '2024' %}selected{% endif %}>2024</option>
-                        <option value="2025" {% if request.GET.year == '2025' %}selected{% endif %}>2025</option>
+                    <select name="year" id="year" class="form-select form-select-sm shadow-sm">
+                        {% for y in 2020|to:2026 %}
+                        <option value="{{ y }}" {% if request.GET.year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
                     </select>
                 </div>
 
-                <div class="col-md-6 monthly-option" style="{% if request.GET.report_type == 'yearly' or request.GET.report_type == 'custom' %}display: none;{% endif %}">
-                    <label for="month" class="form-label fw-bold">Select Month</label>
-                    <input type="month" name="month" class="form-control form-control-sm shadow-sm"
-                           id="month" value="{{ request.GET.month }}" required>
+                <div class="col-md-6 monthly-option" style="{% if request.GET.report_type not in ['monthly', ''] %}display: none;{% endif %}">
+                    <label class="form-label fw-bold">Select Month</label>
+                    <input type="month" name="month" class="form-control form-control-sm shadow-sm" value="{{ request.GET.month }}">
                 </div>
 
                 <div class="row g-3 custom-range-option" style="{% if request.GET.report_type != 'custom' %}display: none;{% endif %}">
                     <div class="col-md-6">
-                        <label for="start_date" class="form-label fw-bold ">Start Date</label>
-                        <input type="date" name="start_date" class="form-control form-control-sm shadow-sm"
-                               id="start_date" value="{{ request.GET.start_date }}" required>
+                        <label class="form-label fw-bold">Start Date</label>
+                        <input type="date" name="start_date" class="form-control form-control-sm shadow-sm" value="{{ request.GET.start_date }}">
                     </div>
                     <div class="col-md-6">
-                        <label for="end_date" class="form-label fw-bold">End Date</label>
-                        <input type="date" name="end_date" class="form-control form-control-sm shadow-sm"
-                               id="end_date" value="{{ request.GET.end_date }}" required>
+                        <label class="form-label fw-bold">End Date</label>
+                        <input type="date" name="end_date" class="form-control form-control-sm shadow-sm" value="{{ request.GET.end_date }}">
                     </div>
                 </div>
 
                 <div class="col-md-4">
-                    <label for="item" class="form-label fw-bold">Item Name</label>
-                    <input type="text" name="item" class="form-control form-control-sm shadow-sm"
-                           value="{{ request.GET.item }}" placeholder="Enter item name">
+                    <label class="form-label fw-bold">Item Name</label>
+                    <input type="text" name="item" class="form-control form-control-sm shadow-sm" value="{{ request.GET.item }}">
                 </div>
+
                 <div class="col-md-4">
-                    <label for="status" class="form-label fw-bold">Status</label>
+                    <label class="form-label fw-bold">Status</label>
                     <select name="status" class="form-select form-select-sm shadow-sm">
                         <option value="">All</option>
                         {% for s in status_choices %}
-                            <option value="{{ s }}" {% if request.GET.status == s %}selected{% endif %}>
-                                {{ s|capfirst }}
-                            </option>
+                        <option value="{{ s }}" {% if request.GET.status == s %}selected{% endif %}>{{ s|capfirst }}</option>
                         {% endfor %}
                     </select>
                 </div>
+
                 {% if not user|in_group:'Faculty' %}
-                
-                
                 <div class="col-md-4">
-                    <label for="user" class="form-label fw-bold">Requested By</label>
-                    <input type="text" name="user" class="form-control form-control-sm shadow-sm"
-                           value="{{ request.GET.user }}" placeholder="Enter username">
+                    <label class="form-label fw-bold">Requested By</label>
+                    <input type="text" name="user" class="form-control form-control-sm shadow-sm" value="{{ request.GET.user }}">
                 </div>
                 {% endif %}
-                <div class="col-12 d-flex justify-content-end mt-3">
+
+                <div class="col-12 d-flex justify-content-end gap-2 mt-3">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-search me-1"></i> Generate Report
                     </button>
-            
                     {% if requests %}
-                    <a href="{% url 'export_request_report' %}?format=csv&report_type={{ request.GET.report_type }}&year={{ request.GET.year }}&month={{ request.GET.month }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}&item={{ request.GET.item }}&status={{ request.GET.status }}&user={{ request.GET.user }}" class="btn btn-success ms-2">
+                    <a href="{% url 'export_request_report' %}?format=csv&report_type={{ request.GET.report_type }}&year={{ request.GET.year }}&month={{ request.GET.month }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}&item={{ request.GET.item }}&status={{ request.GET.status }}&user={{ request.GET.user }}" class="btn btn-success">
                         <i class="bi bi-file-earmark-excel me-1"></i> Export as CSV
                     </a>
                     {% endif %}
                 </div>
             </form>
-            
+
+            <!-- Summary Line -->
             <div class="alert alert-light border-start border-1 border-primary mt-3">
-                <p class="mb-0"><strong>Total Requests:</strong> {{ requests|length }}</p>
+                <strong>Total Requests:</strong> {{ requests|length }}
+                {% if selected_period %}
+                — <strong>Period:</strong> <span class="badge bg-secondary">{{ selected_period }}</span>
+                {% endif %}
             </div>
 
-            {% comment %} {% if %} {% endcomment %}
-                <div class="d-flex align-items-center mb-3">
-                    <h5 class="mb-0">Report for: <span class="badge bg-secondary">{{ selected_period }}</span></h5>
-                </div>
-
-                {% if requests %}
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped table-bordered align-middle">
-                            <thead class="table-primary">
-                                <tr>
-                                    <th scope="col" class="text-center">#</th>
-                                    <th scope="col">Item</th>
-                                    <th scope="col">Requested By</th>
-                                    <th scope="col" class="text-center">Quantity</th>
-                                    <th scope="col" class="text-center">Status</th>
-                                    <th scope="col">Request Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for req in requests %}
-                                <tr>
-                                    <td class="text-center">{{ forloop.counter }}</td>
-                                    <td class="fw-medium">{{ req.item.name }}</td>
-                                    <td>{{ req.user.username }}</td>
-                                    <td class="text-center">{{ req.quantity }}</td>
-                                    <td class="text-center">
-                                        {% if req.status == 'pending' %}
-                                            <span class="badge bg-warning text-dark">Pending</span>
-                                        {% elif req.status == 'approved' %}
-                                            <span class="badge bg-success">Approved</span>
-                                        {% elif req.status == 'rejected' %}
-                                            <span class="badge bg-danger">Rejected</span>
-                                        {% elif req.status == 'issued' %}
-                                            <span class="badge bg-primary">Issued</span>
-                                        {% elif req.status == 'returned' %}
-                                            <span class="badge bg-secondary">Returned</span>
-                                        {% else %}
-                                            {% comment %} <span class="badge bg-{{ req.status }}">{{ req.status|capfirst }}</span> {% endcomment %}
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="alert alert-info mt-3">
-                        <i class="bi bi-info-circle me-2"></i> No requests found for this period and filter.
-                    </div>
-                {% endif %}
-            {% comment %} {% endif %} {% endcomment %}
+            <!-- Table -->
+            {% if requests %}
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>#</th>
+                            <th>Item</th>
+                            <th>Serial Number</th>
+                            <th>Requested By</th>
+                            <th>Status</th>
+                            <th>Request Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ req.item.name }}</td>
+                            <td>{{ req.item.serial_number }}</td>
+                            <td>{{ req.user.username }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if req.status == 'pending' %}bg-warning text-dark
+                                    {% elif req.status == 'approved' %}bg-success
+                                    {% elif req.status == 'rejected' %}bg-danger
+                                    {% elif req.status == 'issued' %}bg-primary
+                                    {% elif req.status == 'returned' %}bg-secondary
+                                    {% endif %}">
+                                    {{ req.status|capfirst }}
+                                </span>
+                            </td>
+                            <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-3">
+                <i class="bi bi-info-circle me-2"></i> No item requests found for this period.
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
-<!-- JavaScript to handle form field visibility based on report type -->
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const radios = document.querySelectorAll('input[name="report_type"]');
-        const yearField = document.getElementById('year');
-        const monthField = document.getElementById('month');
-        const startField = document.getElementById('start_date');
-        const endField = document.getElementById('end_date');
-    
-        function updateFields() {
-            const type = document.querySelector('input[name="report_type"]:checked').value;
-    
-            // Reset visibility
-            document.querySelector('.yearly-option').style.display = 'none';
-            document.querySelector('.monthly-option').style.display = 'none';
-            document.querySelector('.custom-range-option').style.display = 'none';
-    
-            // Remove all required
-            yearField.required = false;
-            monthField.required = false;
-            startField.required = false;
-            endField.required = false;
-    
-            // Set relevant section
-            if (type === 'yearly') {
-                document.querySelector('.yearly-option').style.display = 'block';
-                yearField.required = true;
-            } else if (type === 'monthly') {
-                document.querySelector('.monthly-option').style.display = 'block';
-                monthField.required = true;
-            } else if (type === 'custom') {
-                document.querySelector('.custom-range-option').style.display = 'flex';
-                startField.required = true;
-                endField.required = true;
-            }
-        }
-    
-        radios.forEach(radio => {
-            radio.addEventListener('change', updateFields);
-        });
-    
-        // Initial setup
-        updateFields();
+document.addEventListener('DOMContentLoaded', function () {
+    const updateFields = () => {
+        const type = document.querySelector('input[name="report_type"]:checked').value;
+        document.querySelector('.yearly-option').style.display = type === 'yearly' ? 'block' : 'none';
+        document.querySelector('.monthly-option').style.display = type === 'monthly' ? 'block' : 'none';
+        document.querySelector('.custom-range-option').style.display = type === 'custom' ? 'flex' : 'none';
+    };
+
+    document.querySelectorAll('input[name="report_type"]').forEach(radio => {
+        radio.addEventListener('change', updateFields);
     });
-    </script>
-    
-    
+
+    updateFields();
+});
+</script>
 {% endblock %}

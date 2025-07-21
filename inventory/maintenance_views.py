@@ -1,140 +1,169 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import user_passes_test
-from .models import ItemRequest, InventoryItem
-import datetime
-from django.core.paginator import Paginator
-from django.db.models import Q
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
+from django.core.paginator import Paginator
 from django.http import JsonResponse
+from django.db.models import Q
+from .models import InventoryItem, ItemRequest, MaintenanceRequest
 from .utils import is_clerk
 
+import datetime
+
+
+# -------------------- Clerk View: Maintenance Overview --------------------
+
+@login_required
 @user_passes_test(is_clerk)
 def item_maintenance(request):
-    # Get search query and filter value from GET parameters
     search_query = request.GET.get('q', '')
     filter_value = request.GET.get('filter', '')
 
-    # Start with the base query: items with 'issued' status
-    issued_items = ItemRequest.objects.filter(status='issued').order_by('issued_date')
-    issued_maintenance_items = issued_items.filter(item__needs_maintenance=True)
-    # Filter by search query if provided
+    # Get all issued item requests where the item needs maintenance
+    issued_requests = ItemRequest.objects.filter(
+        status='issued',
+        item__needs_maintenance=True
+    ).select_related('item', 'user')
+
     if search_query:
-        issued_maintenance_items = issued_maintenance_items.filter(Q(item__name__icontains=search_query))
+        issued_requests = issued_requests.filter(
+            Q(item__name__icontains=search_query) |
+            Q(item__serial_number__icontains=search_query)
+        )
 
-    # Today's date
     today = timezone.now().date()
-
-    # List to store filtered items
     filtered_items = []
 
-    # Add custom logic to check if maintenance is overdue based on last_maintenance_date or issued_date
-    for item in issued_maintenance_items:
-        # Ensure last_maintenance_date is a date object
-        last_maintenance_date = item.last_maintenance_date
-        if last_maintenance_date and isinstance(last_maintenance_date, datetime.datetime):
-            last_maintenance_date = last_maintenance_date.date()
+    for req in issued_requests:
+        item = req.item
+        interval = item.maintenance_interval_days
 
-        # Initialize is_overdue as False to avoid the "undefined variable" error
-        is_overdue = False
+        # Fallback to issued_date only if last_maintenance is missing
+        last_maint_date = item.last_maintenance_date or (req.issued_date.date() if req.issued_date else None)
+        
+        # If no dates at all, skip item from filtering as it's invalid
+        if not last_maint_date or not interval:
+            if not filter_value:  # Include only in unfiltered case
+                filtered_items.append(req)
+            continue
 
-        # If there's a last_maintenance_date
-        if last_maintenance_date:
-            # Calculate overdue based on last_maintenance_date
-            if item.item.maintenance_interval_days is not None:
-                days_since_last_maintenance = (today - last_maintenance_date).days
-                is_overdue = days_since_last_maintenance > item.item.maintenance_interval_days
-        else:
-            # If there's no last_maintenance_date, calculate based on issued_date
-            if item.item.maintenance_interval_days is not None:
-                # Ensure issued_date is a date object (convert to date if it's a datetime object)
-                issued_date = item.issued_date.date() if isinstance(item.issued_date, datetime.datetime) else item.issued_date
+        days_since = (today - last_maint_date).days
+        is_overdue = days_since > interval
 
-
-                days_since_issued = (today - issued_date).days
-                is_overdue = days_since_issued > item.item.maintenance_interval_days
-
-        # Filter based on the filter_value ('due' or 'overdue')
         if filter_value == 'overdue' and is_overdue:
-            filtered_items.append(item)
+            filtered_items.append(req)
         elif filter_value == 'due' and not is_overdue:
-            filtered_items.append(item)
-        elif filter_value == '':  # Show all non-overdue items when no filter is set
-            filtered_items.append(item)
+            filtered_items.append(req)
+        elif not filter_value:
+            filtered_items.append(req)
 
-    # Paginate the filtered items
+    # Paginate results
     paginator = Paginator(filtered_items, 30)
-    page_number = request.GET.get('items_page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get('items_page'))
+    user_requested_maintenance = MaintenanceRequest.objects.filter(status = 'pending')
 
-    return render(request, 'maintenance/maintenance_page.html', {'maintenance_items': page_obj})
+    return render(request, 'maintenance/maintenance_page.html', {
+        'maintenance_items': page_obj,
+        'user_requested_maintenance':user_requested_maintenance
+    })
 
+
+# -------------------- Clerk: Mark Item as Maintained --------------------
+
+@login_required
 @user_passes_test(is_clerk)
 def mark_maintained(request, item_id):
     try:
-        item = ItemRequest.objects.get(id=item_id) #requestid
-        item.last_maintenance_date = timezone.now()
-        item.save()
+        item_request = get_object_or_404(ItemRequest, id=item_id)
+        inventory_item = item_request.item
+        inventory_item.last_maintenance_date = timezone.now().date()
+        inventory_item.save()
         return JsonResponse({'success': True})
-    except item.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Item not found'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
+
+# -------------------- Faculty View: My Maintenance Items --------------------
+
+@login_required
 def user_item_maintenance(request):
-    # Get search query and filter value from GET parameters
     search_query = request.GET.get('q', '')
     filter_value = request.GET.get('filter', '')
 
-    # Start with the base query: items with 'issued' status
-    issued_items = ItemRequest.objects.filter( user = request.user , status='issued').order_by('issued_date')
-    issued_maintenance_items = issued_items.filter(item__needs_maintenance=True)
-    # Filter by search query if provided
+    user_requests = ItemRequest.objects.filter(
+        user=request.user,
+        status='issued',
+        item__needs_maintenance=True
+    ).select_related('item')
+
     if search_query:
-        issued_maintenance_items = issued_maintenance_items.filter(Q(item__name__icontains=search_query))
+        user_requests = user_requests.filter(
+            Q(item__name__icontains=search_query) |
+            Q(item__serial_number__icontains=search_query)
+        )
 
-    # Today's date
     today = timezone.now().date()
-
-    # List to store filtered items
     filtered_items = []
 
-    # Add custom logic to check if maintenance is overdue based on last_maintenance_date or issued_date
-    for item in issued_maintenance_items:
-        # Ensure last_maintenance_date is a date object
-        last_maintenance_date = item.last_maintenance_date #item.item.last...
-        if last_maintenance_date and isinstance(last_maintenance_date, datetime.datetime):
+    for req in user_requests:
+        item = req.item
+        due_interval = item.maintenance_interval_days
+
+        # Get last maintenance date (fallback to issued date)
+        last_maintenance_date = item.last_maintenance_date or req.issued_date.date()
+        if isinstance(last_maintenance_date, datetime.datetime):
             last_maintenance_date = last_maintenance_date.date()
 
-        # Initialize is_overdue as False to avoid the "undefined variable" error
-        is_overdue = False
+        days_since_maintenance = (today - last_maintenance_date).days
+        is_overdue = due_interval and days_since_maintenance > due_interval
 
-        # If there's a last_maintenance_date
-        if last_maintenance_date:
-            # Calculate overdue based on last_maintenance_date
-            if item.maintenance_interval_days is not None:
-                days_since_last_maintenance = (today - last_maintenance_date).days
-                is_overdue = days_since_last_maintenance > item.maintenance_interval_days
-        else:
-            # If there's no last_maintenance_date, calculate based on issued_date
-            if item.maintenance_interval_days is not None:
-                # Ensure issued_date is a date object (convert to date if it's a datetime object)
-                issued_date = item.issued_date.date() if isinstance(item.issued_date, datetime.datetime) else item.issued_date
-
-
-                days_since_issued = (today - issued_date).days
-                is_overdue = days_since_issued > item.maintenance_interval_days
-
-        # Filter based on the filter_value ('due' or 'overdue')
         if filter_value == 'overdue' and is_overdue:
-            filtered_items.append(item)
+            filtered_items.append(req)
         elif filter_value == 'due' and not is_overdue:
-            filtered_items.append(item)
-        elif filter_value == '':  # Show all non-overdue items when no filter is set
-            filtered_items.append(item)
+            filtered_items.append(req)
+        elif not filter_value:
+            filtered_items.append(req)
 
-    # Paginate the filtered items
     paginator = Paginator(filtered_items, 30)
-    page_number = request.GET.get('items_page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get('items_page'))
 
-    return render(request, 'maintenance/maintenance_page.html', {'maintenance_items': page_obj})
+
+    return render(request, 'maintenance/maintenance_page.html', {
+        'maintenance_items': page_obj,
+    })
+
+
+from django.utils.timezone import now  # Ensure 'now' is imported
+
+@login_required
+def request_maintenance(request, item_id):
+    from django.shortcuts import render, get_object_or_404, redirect
+    from django.contrib import messages
+
+    if request.method == 'POST':
+        issue_description = request.POST.get('issue_description', '').strip()
+        if not issue_description:
+            # Redirect on missing issue description with a message
+            messages.error(request, "Issue description is required.")
+            return redirect('your_issued_items', id = request.user.id)
+
+        try:
+            inventory_item = get_object_or_404(InventoryItem, id=item_id, issued_to=request.user)
+            MaintenanceRequest.objects.create(
+                item=inventory_item,
+                reported_by=request.user,
+                issue_description=issue_description,
+                reported_on=now()
+            )
+            
+            # Redirect after successful maintenance request with a success message
+            messages.success(request, "Maintenance request submitted successfully.")
+            return redirect('your_issued_items', id = request.user.id )
+        
+        except Exception:
+            # Redirect on error with an error message
+            messages.error(request, "An error occurred while submitting the maintenance request.")
+            return redirect('your_issued_items', id = request.user.id)
+
+    # GET request — render the maintenance form
+    item = get_object_or_404(InventoryItem, id=item_id, issued_to=request.user)
+    return render(request, 'maintenance/request_maintenance.html', {'item': item})

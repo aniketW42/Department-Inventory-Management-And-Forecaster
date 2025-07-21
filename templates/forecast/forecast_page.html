@@ -1,95 +1,108 @@
 {% extends 'base.html' %}
 {% block title %}Inventory Forecast{% endblock %}
+{% load static %}
 
 {% block content %}
-{% load static %}
 <div class="container-fluid pb-3">
-    <!-- Header Section -->
+    <!-- Header -->
     <div class="row mb-3">
         <div class="col">
-            <h1 class="h3 mb-0 fw-bold ">Inventory Usage Forecast</h1>
-            <p class="mb-3 text-muted">Predict your inventory needs with precision</p>
+            <h1 class="h3 fw-bold mb-0">Inventory Usage Forecast</h1>
+            <p class="text-muted mb-3">Predict your future inventory needs using historical data.</p>
         </div>
     </div>
-    
-    
-    <!-- Upload Form Section -->
-    <div class="row">
-        
-        <div class="card-header  rounded-2 mb-3">
-            <h5 class="fw-bold mb-0 text-dark">
-                <i class="bi bi-graph-up me-2 text-primary"></i>Forecast Options
-            </h5>
-        </div>
-        <div class="col-md-6">
-            <div class="card shadow mb-3">
-                
-                <div class="card-body">
-                    <div>
-                        <h6 class="fw-bold mb-2 text-dark">Upload Excel File</h6>
-                        <form method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold text-dark small">Upload Historical Data</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="bi bi-file-earmark-excel text-primary"></i>
-                                    </span>
-                                    <input type="file" name="file" class="form-control" required>
-                                </div>
-                                <small class="text-muted">Upload CSV or Excel file with your historical data</small>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold text-dark small">Select Year for Forecast</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="bi bi-calendar3 text-primary"></i>
-                                    </span>
-                                    <select name="forecast_year" class="form-select" required>
-                                        <option value="{{ forecast_year.0 }}">{{ forecast_year.0 }}</option>
-                                        <option value="{{ forecast_year.1 }}">{{ forecast_year.1 }}</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-lightning me-2"></i>Generate Forecast
-                                </button>
-                                <a href="{% static 'forecast/sample_template.csv' %}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-download me-2"></i>Download Sample Template
-                                </a>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
 
+    <!-- Main Forecast Form -->
+    <div class="row">
+        <!-- Upload and Forecast -->
         <div class="col-md-6">
             <div class="card shadow mb-3">
-                
+                <div class="card-header bg-light rounded-top">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-upload me-2 text-primary"></i>Upload Forecast Data</h5>
+                </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <h6 class="fw-bold mb-2 text-dark">Direct Forecast</h6>
-                        <p class="text-muted small mb-2">Generate a forecast directly using available data.</p>
-                        <div class="d-grid mb-3">
-                            <a href="{% url "forecast_directly" %}" class="btn btn-primary">
-                                <i class="bi bi-lightning me-2"></i>Generate Direct Forecast
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Upload Excel File</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-file-earmark-excel text-success"></i></span>
+                                <input type="file" name="file" class="form-control" required>
+                            </div>
+                            <div class="form-text">Upload your historical usage file (Excel format)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Select Year for Forecast</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-calendar3 text-primary"></i></span>
+                                <select name="forecast_year" class="form-select" required>
+                                    {% for y in forecast_year %}
+                                        <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-lightning me-2"></i>Generate Forecast
+                            </button>
+                            <a href="{% static 'forecast/sample_template.csv' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-download me-2"></i>Download Sample Template
                             </a>
                         </div>
-                    </div>
-                    
-                    
+                    </form>
                 </div>
             </div>
         </div>
 
+        <!-- Direct Forecast -->
+        <div class="col-md-6">
+            <div class="card shadow mb-3">
+                <div class="card-header bg-light rounded-top">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-lightning-charge text-primary me-2"></i>Generate Direct Forecast</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">You can also skip the upload and use historical usage data already in the system to generate a forecast.</p>
+                    <a href="{% url 'forecast_directly' %}" class="btn btn-primary w-100 mt-2">
+                        <i class="bi bi-bootstrap-reboot me-2"></i>Generate Direct Forecast
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Forecast Result Section -->
+    {% if forecast_data %}
+    <div class="card shadow mt-4">
+        <div class="card-header bg-success text-white">
+            <h6 class="mb-0 fw-bold">Forecast Results for {{ selected_year }}</h6>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Item</th>
+                        <th>Forecast Qty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item, value in forecast_data.items %}
+                    <tr>
+                        <td class="fw-medium">{{ item }}</td>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
-<!-- Add Bootstrap Icons and Chart.js -->
+<!-- Icons & Charts -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 {% endblock %}

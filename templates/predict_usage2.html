@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-
 {% block title %}Inventory Forecast Overview{% endblock %}
+{% load static %}
 {% load dict_filters %}
 
 {% block content %}
@@ -16,53 +16,91 @@
     --info-color: #17a2b8;
     --neutral-color: #6c757d;
   }
-  body { background-color: var(--bg-light); }
+
+  body {
+    background-color: var(--bg-light);
+  }
+
   .dashboard-header, .table-container {
     background-color: var(--bg-content);
     border-radius: 0.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
   }
+
   .table thead th {
     background-color: var(--primary-color);
     color: white;
-    border-color: var(--primary-color);
-    padding: 12px 15px;
     font-weight: 600;
+    padding: 12px 15px;
   }
-  .table tbody tr:hover { background-color: rgba(56, 117, 232, 0.1); }
-  .table tbody td { vertical-align: middle; padding: 12px 15px; }
-  .forecast-header { background-color: var(--primary-hover); color: white; }
-  .current-stock-cell { background-color: rgba(23, 162, 184, 0.1); border-left: 3px solid var(--info-color); }
-  .forecast-cell { background-color: rgba(56, 117, 232, 0.05); border-left: none; }
-  .order-cell-normal { background-color: rgba(40, 167, 69, 0.1); border-left: 3px solid var(--success-color); }
-  .order-cell-warning { background-color: rgba(255, 193, 7, 0.1); border-left: 3px solid var(--warning-color); }
-  .order-cell-danger { background-color: rgba(220, 53, 69, 0.1); border-left: 3px solid var(--danger-color); }
-  .item-name-cell { font-weight: 600; background-color: rgba(108, 117, 125, 0.05); }
+
+  .table tbody td {
+    vertical-align: middle;
+    padding: 12px 15px;
+  }
+
+  .table tbody tr:hover {
+    background-color: rgba(56, 117, 232, 0.05);
+  }
+
+  .current-stock-cell {
+    background-color: rgba(23, 162, 184, 0.07);
+  }
+
+  .forecast-cell {
+    background-color: rgba(56, 117, 232, 0.1);
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .order-cell-normal {
+    background-color: rgba(40, 167, 69, 0.15);
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .order-cell-warning {
+    background-color: rgba(255, 193, 7, 0.15);
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .order-cell-danger {
+    background-color: rgba(220, 53, 69, 0.15);
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .item-name-cell {
+    font-weight: 600;
+    background-color: rgba(108, 117, 125, 0.05);
+  }
+
   @media (max-width: 768px) {
-    .table-container, .dashboard-header { padding: 1rem; }
-    .table { font-size: 0.9rem; }
+    .dashboard-header, .table-container {
+      padding: 1rem;
+    }
+
+    .table th, .table td {
+      font-size: 0.9rem;
+    }
   }
 </style>
 
-<div class="container">
+<div class="container-fluid">
   <div class="dashboard-header d-flex justify-content-between align-items-center">
     <div>
-      <h1 class="h3 mb-2 fw-bold text-dark">Inventory Forecast Overview</h1>
-      <p class="mb-0 text-muted">Forecast and decide quantities to order.</p>
+      <h1 class="h3 fw-bold text-dark mb-1">Forecast Overview</h1>
+      <p class="text-muted mb-0">Review usage projections and set order quantities.</p>
     </div>
-    {% comment %} <a href="{% url 'export_forecast_pdf' %}" class="btn btn-outline-primary float-end mb-3">
-      <i class="bi bi-file-earmark-pdf"></i> Print PDF Report
-  </a> {% endcomment %}
-  
   </div>
-  
-  
-  <!-- Table -->
+
+  <!-- Forecast Table -->
   <div class="table-container">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="mb-0">Inventory Details</h5>
+      <h5 class="mb-0 fw-semibold">Forecast Breakdown</h5>
     </div>
 
     <div class="table-responsive">
@@ -71,27 +109,28 @@
         <table class="table table-bordered table-hover" id="inventoryTable">
           <thead>
             <tr>
-              <th scope="col" style="width: 25%;">Item</th>
-              <th scope="col" style="width: 15%;">Current Stock</th>
-              <th scope="col" style="width: 15%;" class="forecast-header text-center">Forecast ({{ forecast_years_used.0 }})</th>
-              <th scope="col" style="width: 15%;">Need to Order</th>
-              <th scope="col" style="width: 15%;">Quantity to Order</th>
+              <th>Item Name</th>
+              <th>Current Stock</th>
+              <th class="text-center">Forecast ({{ forecast_years_used.0 }})</th>
+              <th>Suggested Order</th>
+              <th>Enter Order Qty</th>
             </tr>
           </thead>
           <tbody>
             {% for item_name, forecast in forecast_data.items %}
               <tr>
                 <td class="item-name-cell">{{ item_name }}</td>
-                <td class="current-stock-cell">{{ current_stock|get_item:item_name|default:"-" }}</td>
+                <td class="current-stock-cell">{{ current_stock|get_item:item_name|default:"0" }}</td>
+
                 {% if forecast == "Not enough data" %}
-                  <td class="text-muted text-center">{{ forecast }}</td>
-                  <td>-</td>
-                  <td>-</td>
+                  <td class="text-muted text-center">Not enough data</td>
+                  <td class="text-muted text-center">—</td>
+                  <td class="text-muted text-center">—</td>
                 {% else %}
                   {% for year, value in forecast.items %}
                     <td class="forecast-cell">{{ value }}</td>
                   {% endfor %}
-  
+
                   {% with order_value=need_to_order|get_item:item_name|default:0 %}
                     {% if order_value > 50 %}
                       <td class="order-cell-danger">{{ order_value }}</td>
@@ -101,29 +140,28 @@
                       <td class="order-cell-normal">{{ order_value }}</td>
                     {% endif %}
                   {% endwith %}
-  
+
                   <td>
-                    <input type="number" class="form-control form-control-sm" name="order_qty_{{ item_name|slugify }}" placeholder="Enter quantity" required>
+                    <input type="number" class="form-control form-control-sm"
+                           name="order_qty_{{ item_name|slugify }}"
+                           placeholder="Enter quantity" min="0" required>
                   </td>
                 {% endif %}
               </tr>
             {% endfor %}
           </tbody>
         </table>
-      
+
         <button type="submit" class="btn btn-primary mt-3">
-          <i class="bi bi-file-earmark-pdf"></i> Generate PDF Report
+          <i class="bi bi-file-earmark-excel me-1"></i> Generate Excel Report
         </button>
       </form>
-      
     </div>
   </div>
 </div>
 
-<!-- Bootstrap & Chart.js -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Assets -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-
-{% endblock content %}
+{% endblock %}

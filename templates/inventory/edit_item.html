@@ -1,21 +1,133 @@
 {% extends "base.html" %}
-
 {% block title %}Edit Item{% endblock %}
 
 {% block content %}
-    <form method="post">
-        {% csrf_token %}
-        <div class="col">
-            <h1 class="h3 mb-0 fw-bold" style="color: #343a40;">
-                {% if item.name %}Edit Item{% else %}Add Item{% endif %}
-            </h1>
-            <p class="mb-3 text-muted">Add a new item to your inventory with all required details.</p>
-        </div>
-        
-        <h2>Edit Item: {{ item.name }}</h2>
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-        <a href="{% url 'inventory_items' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+<div class="container my-4">
+    <h1 class="h3 fw-bold text-dark">Edit Item: {{ item.name }}</h1>
+    <p class="text-muted mb-4">Update the details of this item in your inventory.</p>
 
+    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="alert alert-danger py-2">
+            <small><strong>Error:</strong> Please correct the form below.</small>
+        </div>
+        {% endif %}
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ form.serial_number.label }}</label>
+                {{ form.serial_number }}
+                {{ form.serial_number.errors }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ form.asset_tag.label }}</label>
+                {{ form.asset_tag }}
+                {{ form.asset_tag.errors }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ form.name.label }}</label>
+                {{ form.name }}
+                {{ form.name.errors }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ form.item_type.label }}</label>
+                {{ form.item_type }}
+                {{ form.item_type.errors }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ form.category.label }}</label>
+                {{ form.category }}
+                {{ form.category.errors }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ form.location.label }}</label>
+                {{ form.location }}
+                {{ form.location.errors }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ form.reorder_level.label }}</label>
+                {{ form.reorder_level }}
+                {{ form.reorder_level.errors }}
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ form.image.label }}</label>
+                {{ form.image }}
+                {{ form.image.errors }}
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label fw-semibold">{{ form.description.label }}</label>
+                {{ form.description }}
+                {{ form.description.errors }}
+            </div>
+
+            <div class="col-md-6 d-flex align-items-center">
+                {{ form.needs_maintenance }}
+                <label class="form-check-label ms-2" for="id_needs_maintenance">
+                    Needs Maintenance
+                </label>
+                {{ form.needs_maintenance.errors }}
+            </div>
+
+            <div class="col-md-6" id="maintenance_interval_wrapper" style="display: none;">
+                <label class="form-label fw-semibold">{{ form.maintenance_interval_days.label }}</label>
+                {{ form.maintenance_interval_days }}
+                <div class="small text-muted fst-italic">{{ form.maintenance_interval_days.help_text }}</div>
+                {{ form.maintenance_interval_days.errors }}
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <a href="{% url 'inventory_items' %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-check-lg me-1"></i>Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const checkbox = document.getElementById("id_needs_maintenance");
+        const intervalWrapper = document.getElementById("maintenance_interval_wrapper");
+        const intervalInput = document.getElementById("id_maintenance_interval_days");
+
+        function toggleInterval() {
+            if (checkbox.checked) {
+                intervalWrapper.style.display = "block";
+            } else {
+                intervalWrapper.style.display = "none";
+                if (intervalInput) intervalInput.value = "";
+            }
+        }
+
+        checkbox.addEventListener("change", toggleInterval);
+        toggleInterval(); // initialize view
+    });
+</script>
+
+<style>
+    .form-control, .form-select {
+        font-size: 0.95rem;
+    }
+    label {
+        font-size: 0.9rem;
+    }
+    .form-check-input {
+        margin-top: 0.3rem;
+    }
+    .btn-primary:hover {
+        background-color: #0a58ca;
+    }
+</style>
 {% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Return Requests — Clerk{% endblock %}
+
+{% block content %}
+<div class="container mb-4">
+  <h1 class="h3 fw-bold">Pending Return Requests</h1>
+  <p class="text-muted">Review items staff have requested to return.</p>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Item</th>
+          <th>Serial #</th>
+          <th>Requested By</th>
+          <th>Issued Date</th>
+          <th>Return Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ req.item.name }}</td>
+          <td>{{ req.item.serial_number }}</td>
+          <td>{{ req.user.username }}</td>
+          <td>{{ req.issued_date|date:"Y-m-d H:i" }}</td>
+          <td>
+            <form method="post" action="{% url 'return_item' req.id %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-success">
+                <i class="bi bi-check2-circle me-1"></i> Mark Returned
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center text-muted">No pending return requests.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

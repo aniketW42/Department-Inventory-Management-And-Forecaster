@@ -2,42 +2,74 @@
 {% block title %}Manage Item Requests{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Item Requests</h2>
+<div class="container mt-4">
+    <h2 class="mb-4 fw-bold">Manage Item Requests</h2>
 
-<table class="table table-bordered table-striped">
-    <thead class="table-primary">
-        <tr>
-            <th>Item</th>
-            <th>Quantity</th>
-            <th>Reason</th>
-            <th>Requested By</th>
-            <th>Status</th>
-            <th>Requested At</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for req in requests %}
-        <tr>
-            <td>{{ req.item.name }}</td>
-            <td>{{ req.quantity }}</td>
-            <td>{{ req.reason }}</td>
-            <td>{{ req.user.username }}</td>
-            <td><span class="badge bg-{% if req.status == 'Approved' %}success{% elif req.status == 'Rejected' %}danger{% else %}secondary{% endif %}">{{ req.status }}</span></td>
-            <td>{{ req.request_date }}</td>
-            <td>
-                {% if req.status == 'Pending' %}
-                <form method="post" action="{% url 'process_request' req.id %}" style="display:inline;">
-                    {% csrf_token %}
-                    <button name="action" value="approve" class="btn btn-sm btn-success">Approve</button>
-                    <button name="action" value="reject" class="btn btn-sm btn-danger">Reject</button>
-                </form>
-                {% else %}
-                <em>No action needed</em>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-primary text-center">
+                <tr>
+                    <th>Item</th>
+                    <th>Serial Number</th>
+                    <th>Reason</th>
+                    <th>Requested By</th>
+                    <th>Status</th>
+                    <th>Requested At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>{{ req.item.name }}</td>
+                    <td>{{ req.item.serial_number }}</td>
+                    <td>{{ req.reason }}</td>
+                    <td>{{ req.user.username }}</td>
+                    <td>
+                        <span class="badge
+                            {% if req.status == 'approved' %}bg-success
+                            {% elif req.status == 'rejected' %}bg-danger
+                            {% elif req.status == 'issued' %}bg-primary
+                            {% elif req.status == 'returned' %}bg-secondary
+                            {% else %}bg-warning text-dark
+                            {% endif %}">
+                            {{ req.status|title }}
+                        </span>
+                    </td>
+                    <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
+                    <td class="text-center">
+                        {% if req.status == 'pending' %}
+                        <form method="post" action="{% url 'process_request' req.id %}" class="d-flex gap-2 justify-content-center">
+                            {% csrf_token %}
+                            <button name="action" value="approve" class="btn btn-sm btn-success">
+                                <i class="fas fa-check me-1"></i> Approve
+                            </button>
+                            <button name="action" value="reject" class="btn btn-sm btn-danger">
+                                <i class="fas fa-times me-1"></i> Reject
+                            </button>
+                        </form>
+                        {% else %}
+                        <em>Processed</em>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4">No requests found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .badge {
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .btn-sm {
+        font-size: 0.8rem;
+    }
+</style>
 {% endblock %}

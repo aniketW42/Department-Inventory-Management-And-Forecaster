@@ -1,12 +1,19 @@
 from django.db import models
-from django.contrib.auth.models import User
-from django.utils import timezone
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.utils import timezone
+
+User = get_user_model()
+
+
+# ------------------------ Inventory Item ------------------------
+
 class InventoryItem(models.Model):
     ITEM_TYPE_CHOICES = [
         ('consumable', 'Consumable'),
         ('non-consumable', 'Non-Consumable'),
     ]
+
     CATEGORY_CHOICES = [
         ('furniture', 'Furniture'),
         ('electronics', 'Electronics'),
@@ -15,40 +22,63 @@ class InventoryItem(models.Model):
         ('cleaning_supplies', 'Cleaning Supplies'),
         ('other', 'Other'),
     ]
-    name = models.CharField(max_length=100, unique=True)
+
+    STATUS_CHOICES = [
+        ('available', 'Available'),
+        ('issued', 'Issued'),
+        ('maintenance', 'Under Maintenance'),
+        ('damaged', 'Damaged'),
+        ('retired', 'Retired'),
+    ]
+
+    serial_number = models.CharField(
+        max_length=120,
+        unique=True,
+        null=True,          # ✅ Allow null temporarily
+        blank=True          # ✅ Allow admin form to skip validation
+    )
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
-    quantity = models.PositiveIntegerField()
     category = models.CharField(max_length=100, choices=CATEGORY_CHOICES, default='other')
-    location = models.CharField(max_length=100, blank=True)
+    location = models.CharField(max_length=100, blank=True, help_text="E.g. Lab A, Room 103")
+
+    asset_tag = models.CharField(max_length=100, blank=True, null=True, unique=True)
     reorder_level = models.PositiveIntegerField(default=5)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+
     date_added = models.DateTimeField(auto_now_add=True)
+    image = models.ImageField(upload_to='item_images/', blank=True, null=True)
 
     needs_maintenance = models.BooleanField(default=False)
     maintenance_interval_days = models.PositiveIntegerField(
         blank=True,
         null=True,
-        help_text="Number of days after which maintenance is needed (if applicable)"
+        help_text="Number of days between maintenance"
     )
-    def clean(self):
-        if self.needs_maintenance and not self.maintenance_interval_days:
-            raise ValidationError("Maintenance interval days must be set if the item needs maintenance.")
-        if self.needs_maintenance and self.maintenance_interval_days <= 0:
-            raise ValidationError("Maintenance interval days must be a positive integer.")
-        
+    last_maintenance_date = models.DateField(null=True, blank=True)
 
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
+    issued_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='issued_items')
+    added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='items_added')
+    modified_at = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        if self.needs_maintenance and (not self.maintenance_interval_days or self.maintenance_interval_days <= 0):
+            raise ValidationError("Maintenance interval must be set if item needs maintenance.")
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.serial_number})"
 
     class Meta:
         indexes = [
             models.Index(fields=['item_type']),
             models.Index(fields=['category']),
+            models.Index(fields=['status']),
         ]
+        ordering = ['-date_added']
+
+
+# ------------------------ Item Request ------------------------
 
 class ItemRequest(models.Model):
     STATUS_CHOICES = [
@@ -56,76 +86,94 @@ class ItemRequest(models.Model):
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
         ('issued', 'Issued'),
+        ('return_requested', 'Return Requested'),  # NEW
         ('returned', 'Returned'),
+        ('cancelled', 'Cancelled'),
     ]
 
-    user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
-    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
+    PRIORITY_CHOICES = [
+        ('normal', 'Normal'),
+        ('urgent', 'Urgent'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="requests_made")
+    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name="requests")
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='normal')
+
     request_date = models.DateTimeField(auto_now_add=True)
     decision_date = models.DateTimeField(null=True, blank=True)
-    return_date = models.DateTimeField(null=True, blank=True)
-    reason = models.TextField(blank=True, null=True)
-    processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="processor")
     issued_date = models.DateTimeField(null=True, blank=True)
-    issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="issuer")
-    last_maintenance_date = models.DateField(null=True, blank=True)
+    return_date = models.DateTimeField(null=True, blank=True)
+
+    reason = models.TextField(blank=True, null=True)
+    comments = models.TextField(blank=True, null=True)
+
+    processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="requests_processed")
+    issued_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="requests_issued")
+
+    is_deleted = models.BooleanField(default=False)
 
     def clean(self):
-        from django.db.models import F
+        now = timezone.now()
 
-        # Refresh the item quantity to ensure the latest value is used
-        self.item.refresh_from_db()
-
-        # if self.quantity > self.item.quantity:
-        #     raise ValidationError("Requested quantity exceeds available inventory.")
         if self.status == 'issued':
             if not self.issued_date or not self.issued_by:
-                raise ValidationError("Issued date and issuer must be set when item is marked as issued.")
-            if self.issued_date and self.issued_date > timezone.now():
+                raise ValidationError("Issuer and issued date are required when marking as issued.")
+            if self.issued_date > now:
                 raise ValidationError("Issued date cannot be in the future.")
-            if self.decision_date and self.issued_date and self.issued_date < self.decision_date:
-                raise ValidationError("Issued date cannot be before decision date.")
+
         if self.status == 'returned':
             if not self.return_date:
-                raise ValidationError("Return date must be set when item is returned.")
-            if self.return_date and self.return_date > timezone.now():
+                raise ValidationError("Return date required when marking as returned.")
+            if self.return_date > now:
                 raise ValidationError("Return date cannot be in the future.")
-            if self.issued_date and self.return_date and self.return_date < self.issued_date:
+            if self.issued_date and self.return_date < self.issued_date:
                 raise ValidationError("Return date cannot be before issued date.")
-        if self.decision_date and self.decision_date > timezone.now():
+
+        if self.decision_date and self.decision_date > now:
             raise ValidationError("Decision date cannot be in the future.")
-        if self.last_maintenance_date and self.last_maintenance_date > timezone.now().date():
-            raise ValidationError("Last maintenance date cannot be in the future.")
-        if self.last_maintenance_date and self.status != "issued":
-            raise ValidationError("Cannot set last maintenance date unless item is marked as issued.")
-
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.user.username} - {self.item.name} - {self.request_date.month},{self.request_date.year} ({self.status})"
+        return f"{self.user.username} → {self.item.name} ({self.status})"
 
     class Meta:
         indexes = [
             models.Index(fields=['status']),
             models.Index(fields=['request_date']),
         ]
+        ordering = ['-request_date']
 
-class MaintenanceRequest(models.Model): # each issued item will have its separate maintenece record
-    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE)
-    reported_by = models.ForeignKey('auth.User', on_delete=models.CASCADE)
-    issue_description = models.TextField()
-    status = models.CharField(max_length=20, choices=[
+
+# ------------------------ Maintenance Request ------------------------
+
+class MaintenanceRequest(models.Model):
+    STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('in_progress', 'In Progress'),
         ('completed', 'Completed')
-    ], default='pending')
+    ]
+
+    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name="maintenance_logs")
+    reported_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="maintenance_reports")
+
+    issue_description = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
     reported_on = models.DateTimeField(auto_now_add=True)
     updated_on = models.DateTimeField(auto_now=True)
 
+    resolution_notes = models.TextField(blank=True, null=True)
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="maintenance_resolved")
+    actual_completion_date = models.DateTimeField(null=True, blank=True)
+
+    def clean(self):
+        if self.status == 'completed' and not self.actual_completion_date:
+            raise ValidationError("Actual completion date is required when marking as completed.")
+
     def __str__(self):
-        return f"{self.item.name} - {self.status}"
+        return f"Maintenance - {self.item.serial_number} → {self.status}"
+
+    class Meta:
+        ordering = ['-reported_on']
