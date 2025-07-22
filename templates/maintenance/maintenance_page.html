@@ -108,7 +108,7 @@
                                 {% for req in user_requested_maintenance %}
                                 <tr>
                                     <td class="fw-semibold">{{ req.item.name }}</td>
-                                    <td class="fw-semibold">{{ req.item.serial_number }}</td>
+                                    <td><span class="badge bg-light text-dark">{{ req.item.serial_number }}</span></td>
                                     <td>{{ req.reported_by }}</td>
                                     <td>{{ req.reported_on|date:"Y-m-d" }}</td>
                                     <td>{{ req.issue_description }}</td>
@@ -156,7 +156,7 @@
                                 {% for req in maintenance_items %}
                                 <tr>
                                     <td class="fw-semibold">{{ req.item.name }}</td>
-                                    <td class="fw-semibold">{{ req.item.serial_number }}</td>
+                                    <td class="fw-semibold"><span class="badge bg-light text-dark">{{ req.item.serial_number }}</span></td>
                                     <td>{{ req.user.get_full_name|default:req.user.username }}</td>
                                     <td>{{ req.issued_date|date:"Y-m-d" }}</td>
                                     <td>

@@ -2,28 +2,22 @@
 {% block title %}Clerk Dashboard{% endblock %}
 
 {% block content %}
-<div class="dashboard-container pb-4">
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-4">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-3" style="width: 56px; height: 56px;">
-                        <i class="bi bi-person-fill fs-2"></i>
-                    </div>
-                    <div>
-                        <h2 class="mb-1 fw-bold text-primary">Welcome, {{ user.get_full_name|default:user.username }}</h2>
-                        <p class="text-secondary mb-0">Clerk Dashboard</p>
-                    </div>
-                </div>
-                <div>
-                    <a href="{% url 'view_return_requests' %}" class="btn btn-primary d-flex align-items-center">
-                        <i class="bi bi-arrow-return-left me-2"></i>View Return Requests
-                    </a>
-                </div>
+<div class="container pb-4">
+
+    <div class=" mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="h3 mb-0 fw-bold" style="color: #343a40;">Clerk Dashboard</h1>
+                <p class="mb-0" style="color: #6c757d;">Manage and track inventory requests efficiently</p>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'view_return_requests' %}" class="btn btn-primary d-flex align-items-center text-white">
+                    <i class="fas fa-undo me-2"></i>View Return Requests
+                </a>
             </div>
         </div>
     </div>
-
+    
     <!-- Navigation Pills -->
     <div class="mb-4 border rounded p-2">
         <ul class="nav nav-pills nav-justified">
@@ -83,13 +77,7 @@
                                     {% elif req.status == 'rejected' %}bg-danger
                                     {% else %}bg-secondary
                                     {% endif %}">
-                                    <i class="fas 
-                                        {% if req.status == 'pending' %}fa-hourglass-half
-                                        {% elif req.status == 'approved' %}fa-check
-                                        {% elif req.status == 'issued' %}fa-arrow-right
-                                        {% elif req.status == 'rejected' %}fa-times
-                                        {% else %}fa-circle
-                                        {% endif %} me-1"></i>
+                                    
                                     {{ req.status|capfirst }}
                                 </span>
                             </td>
