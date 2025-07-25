@@ -38,9 +38,6 @@
                 <a class="nav-link {% if request.GET.view == 'regular' %}active{% endif %}" 
                    href="?view=regular{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}">
                     Regular Maintenance
-                    {% if maintenance_items %}
-                        <span class="badge bg-primary ms-1">{{ maintenance_items|length }}</span>
-                    {% endif %}
                 </a>
             </li>
         </ul>
@@ -108,13 +105,13 @@
                                 {% for req in user_requested_maintenance %}
                                 <tr>
                                     <td class="fw-semibold">{{ req.item.name }}</td>
-                                    <td><span class="badge bg-light text-dark">{{ req.item.serial_number }}</span></td>
+                                    <td class=""><code>{{ req.item.serial_number }}</code></td>
                                     <td>{{ req.reported_by }}</td>
                                     <td>{{ req.reported_on|date:"Y-m-d" }}</td>
                                     <td>{{ req.issue_description }}</td>
                                     {% if user|in_group:'Clerk' %}
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmMaintenance({{ req.id }})">Mark Maintained</button>
+                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmMaintenance({{ req.id }}, 'request')">Mark Maintained</button>
                                     </td>
                                     {% endif %}
                                 </tr>
@@ -156,7 +153,7 @@
                                 {% for req in maintenance_items %}
                                 <tr>
                                     <td class="fw-semibold">{{ req.item.name }}</td>
-                                    <td class="fw-semibold"><span class="badge bg-light text-dark">{{ req.item.serial_number }}</span></td>
+                                    <td class=""><code>{{ req.item.serial_number }}</code></td>
                                     <td>{{ req.user.get_full_name|default:req.user.username }}</td>
                                     <td>{{ req.issued_date|date:"Y-m-d" }}</td>
                                     <td>
@@ -188,7 +185,7 @@
                                     </td>
                                     {% if user|in_group:'Clerk' %}
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmMaintenance({{ req.id }})">Mark Maintained</button>
+                                        <button type="button" class="btn btn-sm btn-outline-success" onclick="confirmMaintenance({{ req.id }},'regular')">Mark Maintained</button>
                                     </td>
                                     {% endif %}
                                 </tr>
@@ -239,7 +236,10 @@
     {% endif %}
 
     <!-- Hidden field to store item ID and CSRF token -->
-    <input type="hidden" id="maintenanceItemId" value="">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <input type="hidden" id="maintenanceItemId">
+    <input type="hidden" id="maintenanceType">
+
     {% csrf_token %}
 </div>
 
@@ -261,73 +261,55 @@
         font-weight: 500;
     }
 </style>
-
 <script>
-    function confirmMaintenance(id) {
-        document.getElementById('maintenanceItemId').value = id;
-        const maintenanceModal = new bootstrap.Modal(document.getElementById('maintenanceModal'));
-        maintenanceModal.show();
+    function confirmMaintenance(id, type) {
+      document.getElementById("maintenanceItemId").value = id;
+      document.getElementById("maintenanceType").value = type;
+      const modal = new bootstrap.Modal(document.getElementById("maintenanceModal"));
+      modal.show();
     }
-    
-    document.getElementById('confirmMaintenanceBtn').addEventListener('click', function() {
-        const id = document.getElementById('maintenanceItemId').value;
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const confirmBtn = this;
-        const errorToast = document.getElementById('errorToast');
-
-        // Disable button and show loading state
-        confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Processing...';
-
-        fetch(`/mark-maintained/${id}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => {
-            // Check if response is JSON
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                return response.text().then(text => {
-                    throw new Error(`Expected JSON, got ${contentType || 'unknown'}: ${text.slice(0, 50)}...`);
-                });
-            }
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                // Hide modal
-                bootstrap.Modal.getInstance(document.getElementById('maintenanceModal')).hide();
-                
-                // Show success toast
-                const toast = new bootstrap.Toast(document.getElementById('maintenanceToast'));
-                toast.show();
-                
-                // Refresh page after a delay
-                setTimeout(() => location.reload(), 500);
-            } else {
-                throw new Error(data.error || 'Failed to mark as maintained');
-            }
-        })
-        .catch(error => {
-            // Show error toast with specific message
-            errorToast.querySelector('.toast-body').textContent = `Failed to mark item as maintained: ${error.message}`;
-            const toast = new bootstrap.Toast(errorToast);
-            toast.show();
-            console.error('Error:', error);
-        })
-        .finally(() => {
-            // Reset button state
-            confirmBtn.disabled = false;
-            confirmBtn.innerHTML = 'Yes, Mark as Maintained';
-        });
+  
+    document.getElementById("confirmMaintenanceBtn").addEventListener("click", function () {
+      const id = document.getElementById("maintenanceItemId").value;
+      const type = document.getElementById("maintenanceType").value;
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      const btn = this;
+  
+      const endpoint = (type === 'request') 
+        ? `/request-mark-maintained/${id}/` 
+        : `/mark-maintained/${id}/`;
+  
+      btn.disabled = true;
+      btn.innerHTML = `<i class="bi bi-arrow-repeat me-2"></i>Processing...`;
+  
+      fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrfToken,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({})
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          bootstrap.Modal.getInstance(document.getElementById("maintenanceModal")).hide();
+          new bootstrap.Toast(document.getElementById("maintenanceToast")).show();
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          throw new Error(data.error || "Server error");
+        }
+      })
+      .catch(error => {
+        document.querySelector("#errorToast .toast-body").textContent = `Error: ${error.message}`;
+        new bootstrap.Toast(document.getElementById("errorToast")).show();
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = "Yes, Mark as Maintained";
+      });
     });
-</script>
+  </script>
+  
 {% endblock %}

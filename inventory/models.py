@@ -7,6 +7,14 @@ User = get_user_model()
 
 
 # ------------------------ Inventory Item ------------------------
+class ItemGroup(models.Model):
+    name = models.CharField(max_length=100, unique=True)  # e.g., "Mouse"
+    category = models.CharField(max_length=100, blank=True)  # e.g., "Electronics"
+    description = models.TextField(blank=True)
+    reorder_level = models.PositiveIntegerField(default=5)
+
+    def __str__(self):
+        return self.name
 
 class InventoryItem(models.Model):
     ITEM_TYPE_CHOICES = [
@@ -41,15 +49,12 @@ class InventoryItem(models.Model):
     description = models.TextField(blank=True)
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
     category = models.CharField(max_length=100, choices=CATEGORY_CHOICES, default='other')
+    item_group = models.ForeignKey( ItemGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name="items")
     location = models.CharField(max_length=100, blank=True, help_text="E.g. Lab A, Room 103")
-
     asset_tag = models.CharField(max_length=100, blank=True, null=True, unique=True)
-    reorder_level = models.PositiveIntegerField(default=5)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
-
     date_added = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(upload_to='item_images/', blank=True, null=True)
-
     needs_maintenance = models.BooleanField(default=False)
     maintenance_interval_days = models.PositiveIntegerField(
         blank=True,
@@ -162,11 +167,11 @@ class MaintenanceRequest(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     reported_on = models.DateTimeField(auto_now_add=True)
-    updated_on = models.DateTimeField(auto_now=True)
+    # updated_on = models.DateTimeField(auto_now=True)
 
-    resolution_notes = models.TextField(blank=True, null=True)
+    #resolution_notes = models.TextField(blank=True, null=True)
     resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="maintenance_resolved")
-    actual_completion_date = models.DateTimeField(null=True, blank=True)
+    completion_date = models.DateTimeField(null=True, blank=True)
 
     def clean(self):
         if self.status == 'completed' and not self.actual_completion_date:

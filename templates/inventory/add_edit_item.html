@@ -8,6 +8,9 @@
         <h1 class="h3 mb-0 fw-bold" style="color: #343a40;">
             {% if item.name %}Edit Item{% else %}Add Item{% endif %}
         </h1>
+        {% if not item.name %}
+            
+        {% endif %}
         {% if item.name %}
             <p class="mb-3 text-muted">Update the details of an existing item in your inventory.</p>
         {% else %}
@@ -20,14 +23,6 @@
             <div class="card shadow-sm border-0 rounded-3">
                 <div class="card-body p-4">
 
-                    {% comment %} {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible py-2 fade show">
-                                <small>{{ message }}</small>
-                                <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %} {% endcomment %}
 
                     <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
                         {% csrf_token %}
@@ -40,7 +35,46 @@
 
                         <div class="row g-3">
 
+                            <!-- Item Group (Styled to match the page) -->
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Item Group</label>
+                                <div id="group-section">
+                                    <!-- EXISTING GROUP SELECT -->
+                                    <div id="select-group" class="input-group mb-2">
+                                        {{ form.item_group }}
+                                        {% if not item.name %}
+                                            <button type="button" class="btn btn-outline-primary ms-2" style="min-width: 170px;" onclick="toggleGroupForm(true)">+ New Group</button>
+                                        {% endif %}
+                                    </div>
+                                    <!-- CREATE NEW GROUP -->
+                                    <div id="new-group-fields" class="p-3 rounded border bg-light" style="display: none;">
+                                        <div class="mb-2">
+                                            <label class="form-label mb-1">Group Name <span class="text-danger">*</span></label>
+                                            <input type="text" name="new_group_name" class="form-control" placeholder="e.g. Mouse" maxlength="100" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label mb-1">Category <span class="text-muted">(optional)</span></label>
+                                            <input type="text" name="new_group_category" class="form-control" placeholder="e.g. Electronics" maxlength="100">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label mb-1">Description <span class="text-muted">(optional)</span></label>
+                                            <input type="text" name="new_group_description" class="form-control" placeholder="Details or model info..." maxlength="255">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label mb-1">Reorder Level<span class="text-muted"></span></label>
+                                            <input type="number" name="new_group_reorder" class="form-control" placeholder="Default 5..." maxlength="100">
+                                        </div>
+                                        <button type="button" class="btn btn-link p-0 ms-1 text-decoration-none" onclick="toggleGroupForm(false)">
+                                            <i class="bi bi-arrow-left me-1"></i>Back to select group
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+
+
                             <!-- Serial Number -->
+
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">{{ form.serial_number.label }}</label>
                                 {{ form.serial_number }}
@@ -80,12 +114,6 @@
                                 {{ form.location.errors }}
                             </div>
 
-                            <!-- Reorder Level -->
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">{{ form.reorder_level.label }}</label>
-                                {{ form.reorder_level }}
-                                {{ form.reorder_level.errors }}
-                            </div>
 
                             <!-- Upload Image -->
                             <div class="col-md-6">
@@ -152,6 +180,10 @@
         checkbox.addEventListener("change", toggleMaintenanceField);
         toggleMaintenanceField(); // Initial load
     });
+    function toggleGroupForm(createNew) {
+        document.getElementById('select-group').style.display = createNew ? 'none' : '';
+        document.getElementById('new-group-fields').style.display = createNew ? '' : 'none';
+    }
 </script>
 
 <!-- Styling -->

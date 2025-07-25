@@ -44,6 +44,7 @@ def reports(request):
 
 
 # ------------------------ 📄 General Item Request Report ------------------------
+import datetime
 
 @login_required
 def item_request_report(request):
@@ -54,12 +55,15 @@ def item_request_report(request):
     end_date = request.GET.get('end_date')
     item = request.GET.get('item')
     status = request.GET.get('status')
-    user = request.GET.get('user')
+
+    if request.user.groups.filter(name='Faculty').exists():
+        user = request.user
+    else:
+        user = request.GET.get('user')
 
     queryset = ItemRequest.objects.all()
     selected_period = ""
 
-    # Filter by time
     try:
         if report_type == 'yearly' and year:
             queryset = queryset.filter(request_date__year=year)
@@ -77,7 +81,6 @@ def item_request_report(request):
     except Exception:
         selected_period = "Invalid range"
 
-    # Filters
     if item:
         queryset = queryset.filter(item__name__icontains=item)
     if status:
@@ -87,12 +90,19 @@ def item_request_report(request):
 
     status_choices = ['pending', 'approved', 'rejected', 'issued', 'returned']
 
+    # Years from 2020 to current year+2 for dropdown
+    current_year = datetime.datetime.now().year
+    years = list(range(2020, current_year + 3))
+    monthly_or_blank = request.GET.get('report_type') in (None, '', 'monthly')
+
     return render(request, 'reports/item_request_report.html', {
         'requests': queryset.order_by('-request_date'),
         'selected_period': selected_period,
         'status_choices': status_choices,
-    })
+        'years': years,  
+        'monthly_or_blank': monthly_or_blank,
 
+    })
 
 # ------------------------ 📤 CSV Export for Requests ------------------------
 
@@ -175,13 +185,15 @@ def inventory_report(request):
 
     if item:
         queryset = queryset.filter(name__icontains=item)
-
+    current_year = datetime.datetime.now().year
+    years = list(range(2020, current_year + 3))
     if request.GET.get('export') == 'excel':
         return export_inventory_to_excel(queryset, selected_period)
 
     return render(request, 'reports/inventory_report.html', {
         'items': queryset,
         'selected_period': selected_period,
+        'years' : years,
     })
 
 

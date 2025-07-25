@@ -2,58 +2,70 @@
 {% block title %}View Requests{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container mb-4">
     <div class="col mb-3">
-        <h1 class="h3 mb-0 fw-bold text-dark">Item Requests: {{ requser.username }}</h1>
+        <h1 class="h3 mb-0 fw-bold text-dark">
+            {% if requser == request.user %}
+                Your Requests
+            {% else %}
+                Item Requests: {{ requser.username }}
+            {% endif %}
+        </h1>
         <p class="mb-0 text-muted">View all item requests by this user</p>
     </div>
 
-    <div class="card shadow-sm mb-4">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Item</th>
-                        <th>Serial #</th>
-                        <th>Reason</th>
-                        <th>Requested By</th>
-                        <th>Status</th>
-                        <th>Processed By</th>
-                        <th>Request Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for req in requests %}
-                    <tr>
-                        <td>{{ req.item.name }}</td>
-                        <td><code>{{ req.item.serial_number }}</code></td>
-                        <td>{{ req.reason|default:"—" }}</td>
-                        <td>{{ req.user.username }}</td>
-                        <td>
-                            <span class="badge 
-                                {% if req.status == 'approved' %}bg-success
-                                {% elif req.status == 'rejected' %}bg-danger
-                                {% elif req.status == 'pending' %}bg-warning text-dark
-                                {% elif req.status == 'issued' %}bg-primary
-                                {% elif req.status == 'returned' %}bg-secondary
-                                {% else %}bg-light text-dark
-                                {% endif %}">
-                                {{ req.status|capfirst }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if req.processed_by %}
-                                {{ req.processed_by.username }}
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ req.request_date|date:"M d, Y" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Item</th>
+                    <th>Serial #</th>
+                    <th>Reason</th>
+                    <th>Requested By</th>
+                    <th>Status</th>
+                    <th>Processed By</th>
+                    <th>Request Date</th>
+                </tr>
+            </thead>
+            <tbody> 
+                {% for req in requests %}
+                <tr>
+                    <td>{{ req.item.name }}</td>
+                    <td><code>{{ req.item.serial_number }}</code></td>
+                    <td>{{ req.reason|default:"—" }}</td>
+                    <td>{{ req.user.username }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if req.status == 'approved' %}bg-success
+                            {% elif req.status == 'rejected' %}bg-danger
+                            {% elif req.status == 'pending' %}bg-warning text-dark
+                            {% elif req.status == 'issued' %}bg-primary
+                            {% elif req.status == 'returned' %}bg-secondary
+                            {% else %}bg-light text-dark
+                            {% endif %}">
+                            {{ req.status|capfirst }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if req.processed_by %}
+                            {{ req.processed_by.username }}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ req.request_date|date:"M d, Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="8" class="text-center text-muted py-5">
+                    <div class="d-flex flex-column align-items-center">
+                      <p>No issued items found.</p>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     <!-- Pagination Controls -->

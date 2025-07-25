@@ -71,7 +71,7 @@
               {% for req in recent_requests|slice:":10" %}
               <tr>
                 <td><strong>{{ req.item.name }}</strong></td>
-                <td><span class="badge bg-light text-dark">{{ req.item.serial_number }}</span></td>
+                <td class=""><code>{{ req.item.serial_number }}</code></span></td>
                 <td>{{ req.user.username }}</td>
                 <td>
                   <span class="badge 
@@ -117,7 +117,7 @@
                 {% if req.status == 'pending' %}
                 <tr>
                   <td><strong>{{ req.item.name }}</strong></td>
-                  <td><span class="badge bg-light text-dark">{{ req.item.serial_number }}</span></td>
+                  <td class=""><code>{{ req.item.serial_number }}</code></span></td>
                   <td>{{ req.user.username }}</td>
                   <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
                   <td>
@@ -166,7 +166,7 @@
                 {% if req.status == 'approved' %}
                 <tr>
                   <td><strong>{{ req.item.name }}</strong></td>
-                  <td><span class="badge bg-light text-dark">{{ req.item.serial_number }}</span></td>
+                  <td class=""><code>{{ req.item.serial_number }}</code></span></td>
                   <td>{{ req.user.username }}</td>
                   <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
                   <td><span class="badge bg-success">{{ req.decision_date|date:"Y-m-d H:i" }}</span></td>
@@ -209,7 +209,7 @@
                 {% if req.status == 'rejected' %}
                 <tr>
                   <td><strong>{{ req.item.name }}</strong></td>
-                  <td><span class="badge bg-light text-dark">{{ req.item.serial_number }}</span></td>
+                  <td class=""><code>{{ req.item.serial_number }}</code></span></td>
                   <td>{{ req.user.username }}</td>
                   <td>{{ req.request_date|date:"Y-m-d H:i" }}</td>
                   <td><span class="badge bg-danger">{{ req.decision_date|date:"Y-m-d H:i" }}</span></td>

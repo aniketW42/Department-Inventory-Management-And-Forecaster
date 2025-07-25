@@ -54,7 +54,7 @@ def submit_item_request(request):
             notify_user(hod, f"{request.user.username} requested item '{item.name}'.")
 
         messages.success(request, "Item requested successfully.")
-        return redirect('request_item')
+        return redirect(request.META.get('HTTP_REFERER', 'request_item_page'))
     
     return HttpResponseBadRequest("Invalid request method.")
 
@@ -168,7 +168,12 @@ def process_request(request, request_id):
 # Staff triggers return request
 @login_required
 def return_item_request(request, request_id):
-    req = get_object_or_404(ItemRequest, id=request_id, user=request.user, status='issued')
+    req = get_object_or_404(ItemRequest, id=request_id, user=request.user)
+    
+    if req.status != 'issued':
+        messages.error(request, "You can only return items that are currently issued.")
+        return redirect('request_history')
+    
     req.status = 'return_requested'
     req.save()
     messages.success(request, f"Return request submitted for item: {req.item.name}")

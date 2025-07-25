@@ -68,19 +68,47 @@ def item_maintenance(request):
 
 
 # -------------------- Clerk: Mark Item as Maintained --------------------
+from django.db import transaction
 
 @login_required
 @user_passes_test(is_clerk)
 def mark_maintained(request, item_id):
+
     try:
-        item_request = get_object_or_404(ItemRequest, id=item_id)
-        inventory_item = item_request.item
-        inventory_item.last_maintenance_date = timezone.now().date()
-        inventory_item.save()
+        with transaction.atomic():
+            item_request = get_object_or_404(ItemRequest, id=item_id)
+            inventory_item = item_request.item
+            inventory_item.last_maintenance_date = timezone.now().date()
+            inventory_item.save()
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
+@login_required
+@user_passes_test(is_clerk)
+def request_mark_maintained(request, item_id):
+    try:
+        with transaction.atomic():
+            item_maintenance_request = get_object_or_404(MaintenanceRequest, id=item_id)
+            inventory_item = getattr(item_maintenance_request, 'item', None)
+            if not inventory_item:
+                raise ValueError("The associated inventory item could not be found.")
+            
+            item_maintenance_request.status = 'completed'
+            item_maintenance_request.completion_date = timezone.now().date()
+            item_maintenance_request.resolved_by = request.user
+            inventory_item.last_maintenance_date = timezone.now().date()
+            
+            if hasattr(inventory_item, 'issued_to') and inventory_item.issued_to:
+                inventory_item.status = 'issued'
+            else:
+                inventory_item.status = 'available'
+            
+            item_maintenance_request.save()
+            inventory_item.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 # -------------------- Faculty View: My Maintenance Items --------------------
 
@@ -154,7 +182,8 @@ def request_maintenance(request, item_id):
                 issue_description=issue_description,
                 reported_on=now()
             )
-            
+            inventory_item.status = 'maintenance'
+            inventory_item.save()
             # Redirect after successful maintenance request with a success message
             messages.success(request, "Maintenance request submitted successfully.")
             return redirect('your_issued_items', id = request.user.id )

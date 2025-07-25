@@ -39,12 +39,16 @@ urlpatterns = [
     path('delete-item/<int:pk>/', delete_item, name='delete_item'),
     path('issue-items/', issue_items, name='issue_items'),
     path('issue-items/<int:request_id>/mark/', mark_as_issued, name='mark_as_issued'),
+    path('item/<int:item_id>/', item_detail, name='item_detail'),
 
     # Forecasting
-    path('predict-usage/<int:year>', predict_usage, name='predict_usage'),
-    path('forecast/', inventory_forecast_view, name='inventory_forecast'),
-    path('predict-usage/next-year', forecast_inventory_usage, name = 'forecast_directly'),
-    path('generate-forecast-excel/', generate_forecast_excel_report, name='generate_forecast_excel_report'),
+    # path('predict-usage/<int:year>', predict_usage, name='predict_usage'),
+    # path('forecast/', inventory_forecast_view, name='inventory_forecast'),
+    # path('predict-usage/next-year', forecast_inventory_usage, name = 'forecast_directly'),
+    # path('generate-forecast-excel/', generate_forecast_excel_report, name='generate_forecast_excel_report'),
+    path("forecast/", forecast_dashboard, name="forecast_dashboard"),
+    path("forecast/api/<int:group_id>/", forecast_api, name="forecast_api"),
+    path("forecast/export/", forecast_dashboard, name="generate_forecast_excel_report"),
 
     # User Management
     path('create-user/', create_user, name='create_user'),
@@ -64,5 +68,6 @@ urlpatterns = [
     path('item-maintenance/', item_maintenance, name='item_maintenance'),
     path('user-item-maintenance/', user_item_maintenance, name='user_item_maintenance'),
     path('mark-maintained/<int:item_id>/', mark_maintained, name='mark_maintained'),
+    path('request-mark-maintained/<int:item_id>/', request_mark_maintained, name='request_mark_maintained'),
     path('maintenance/request/<int:item_id>/', request_maintenance, name='request_maintenance'),
 ]

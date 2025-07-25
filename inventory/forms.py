@@ -23,6 +23,7 @@ class InventoryItemForm(forms.ModelForm):
     class Meta:
         model = InventoryItem
         fields = [
+            'item_group',
             'serial_number',
             'asset_tag',
             'name',
@@ -30,12 +31,12 @@ class InventoryItemForm(forms.ModelForm):
             'item_type',
             'category',
             'location',
-            'reorder_level',
             'needs_maintenance',
             'maintenance_interval_days',
             'image',
         ]
         widgets = {
+            'item_group': forms.Select(attrs={'class': 'form-select'}),
             'serial_number': forms.TextInput(attrs={'class': 'form-control'}),
             'asset_tag': forms.TextInput(attrs={'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -43,7 +44,6 @@ class InventoryItemForm(forms.ModelForm):
             'item_type': forms.Select(attrs={'class': 'form-select'}),
             'category': forms.Select(attrs={'class': 'form-select'}),
             'location': forms.TextInput(attrs={'class': 'form-control'}),
-            'reorder_level': forms.NumberInput(attrs={'class': 'form-control'}),
             'needs_maintenance': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'maintenance_interval_days': forms.NumberInput(attrs={'class': 'form-control'}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),

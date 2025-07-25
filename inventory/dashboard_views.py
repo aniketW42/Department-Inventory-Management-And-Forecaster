@@ -34,9 +34,12 @@ def home(request):
 def clerk_dashboard(request):
     recent_requests = ItemRequest.objects.all().order_by('-request_date')
     recent_approved_requests = ItemRequest.objects.filter(status='approved').order_by('-request_date')
-
+    pending_requests = ItemRequest.objects.filter(status='pending').count()
+    approved_requests = ItemRequest.objects.filter(status='approved').count()
     context = {
         'recent_requests': recent_requests,
+        'all_pending_requests': pending_requests,
+        'all_approved_requests': approved_requests,
         'recent_approved_requests': recent_approved_requests
     }
     return render(request, 'dashboard/clerk_dashboard.html', context)

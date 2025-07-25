@@ -368,7 +368,7 @@
             {% endif %}
             {% if not user|in_group:"Faculty" %}
             <li class="nav-item">
-                <a class="nav-link {% if request.resolver_match.url_name == 'inventory_forecast' %}active{% endif %}" href="{% url 'inventory_forecast' %}">
+                <a class="nav-link {% if request.resolver_match.url_name == 'forecast_dashboard' %}active{% endif %}" href="{% url 'forecast_dashboard' %}">
                     <i class="bi bi-graph-up-arrow"></i>
                     <span>Forecasting</span>
                 </a>

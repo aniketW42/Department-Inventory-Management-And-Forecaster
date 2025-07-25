@@ -31,13 +31,13 @@
                 <div class="col-md-6 yearly-option" style="{% if request.GET.report_type != 'yearly' %}display: none;{% endif %}">
                     <label for="year" class="form-label fw-bold">Select Year</label>
                     <select name="year" id="year" class="form-select form-select-sm shadow-sm">
-                        {% for y in 2020|to:2026 %}
+                        {% for y in years %}
                         <option value="{{ y }}" {% if request.GET.year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
                         {% endfor %}
                     </select>
                 </div>
-
-                <div class="col-md-6 monthly-option" style="{% if request.GET.report_type not in ['monthly', ''] %}display: none;{% endif %}">
+                
+                <div class="col-md-6 monthly-option" style="{% if request.GET.report_type not in monthly_or_blank  %}display: none;{% endif %}">
                     <label class="form-label fw-bold">Select Month</label>
                     <input type="month" name="month" class="form-control form-control-sm shadow-sm" value="{{ request.GET.month }}">
                 </div>
